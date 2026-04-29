@@ -1,0 +1,258 @@
+digraph tm {
+    graph [
+        fontname = Arial;
+        fontsize = 14;
+    ]
+    node [
+        fontname = Arial;
+        fontsize = 14;
+        rankdir = lr;
+    ]
+    edge [
+        shape = none;
+        arrowtail = onormal;
+        fontname = Arial;
+        fontsize = 12;
+    ]
+    labelloc = "t";
+    fontsize = 20;
+    nodesep = 1;
+
+    subgraph cluster_boundary_ZoneExterne_88f2d9c06f {
+        graph [
+            fontsize = 10;
+            fontcolor = black;
+            style = dashed;
+            color = firebrick2;
+            label = <<i>Zone Externe</i>>;
+        ]
+
+        externalentity_AzureOpenAI_f2eb7a3ff7 [
+            shape = square;
+            color = black;
+            fontcolor = black;
+            label = "Azure OpenAI";
+            margin = 0.02;
+        ]
+
+    }
+
+    subgraph cluster_boundary_ZoneInterneOnPremise_acf3059e70 {
+        graph [
+            fontsize = 10;
+            fontcolor = black;
+            style = dashed;
+            color = firebrick2;
+            label = <<i>Zone Interne (On-\nPremise)</i>>;
+        ]
+
+        server_BackendSpringBootServiceChatbot_f8af758679 [
+            shape = circle;
+            color = black;
+            fontcolor = black;
+            label = "Backend Spring\nBoot - Service\nChatbot";
+            margin = 0.02;
+        ]
+
+        server_BackendSpringBootServiceCongés_2c440ebe53 [
+            shape = circle;
+            color = black;
+            fontcolor = black;
+            label = "Backend Spring\nBoot - Service\nCongés";
+            margin = 0.02;
+        ]
+
+        server_BackendSpringBootServicePolitiquesInternes_0291419f72 [
+            shape = circle;
+            color = black;
+            fontcolor = black;
+            label = "Backend Spring\nBoot - Service\nPolitiques\nInternes";
+            margin = 0.02;
+        ]
+
+        server_BackendSpringBootServiceRAG_c76a0a7067 [
+            shape = circle;
+            color = black;
+            fontcolor = black;
+            label = "Backend Spring\nBoot - Service RAG";
+            margin = 0.02;
+        ]
+
+        datastore_PostgreSQLCongés_c6f87088c2 [
+            shape = none;
+            fixedsize = shape;
+            image = "C:\Users\walid\Desktop\AWB_PROJECTS\APP_AWB_2\backend\venv\Lib\site-packages\pytm\images\datastore_black.png";
+            imagescale = true;
+            color = black;
+            fontcolor = black;
+            xlabel = "PostgreSQL -\nCongés";
+            label = "";
+        ]
+
+        datastore_PostgreSQLPolitiquesInternes_9345ab4c19 [
+            shape = none;
+            fixedsize = shape;
+            image = "C:\Users\walid\Desktop\AWB_PROJECTS\APP_AWB_2\backend\venv\Lib\site-packages\pytm\images\datastore_black.png";
+            imagescale = true;
+            color = black;
+            fontcolor = black;
+            xlabel = "PostgreSQL -\nPolitiques\nInternes";
+            label = "";
+        ]
+
+        datastore_PostgreSQLpgvectorEmbeddings_86e4604564 [
+            shape = none;
+            fixedsize = shape;
+            image = "C:\Users\walid\Desktop\AWB_PROJECTS\APP_AWB_2\backend\venv\Lib\site-packages\pytm\images\datastore_black.png";
+            imagescale = true;
+            color = black;
+            fontcolor = black;
+            xlabel = "PostgreSQL\npgvector -\nEmbeddings";
+            label = "";
+        ]
+
+    }
+
+    actor_Utilisateur_579e9aae81 [
+        shape = square;
+        color = black;
+        fontcolor = black;
+        label = "Utilisateur";
+        margin = 0.02;
+    ]
+
+    server_FrontendReact_d2006ce1bb [
+        shape = circle;
+        color = black;
+        fontcolor = black;
+        label = "Frontend React";
+        margin = 0.02;
+    ]
+
+    actor_Utilisateur_579e9aae81 -> server_FrontendReact_d2006ce1bb [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête\nutilisateur\n(questions RH)";
+    ]
+
+    server_FrontendReact_d2006ce1bb -> server_BackendSpringBootServiceChatbot_f8af758679 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête API REST\n(questions RH)";
+    ]
+
+    server_BackendSpringBootServiceChatbot_f8af758679 -> server_BackendSpringBootServiceCongés_2c440ebe53 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête gRPC\n(données congés)";
+    ]
+
+    server_BackendSpringBootServiceChatbot_f8af758679 -> server_BackendSpringBootServicePolitiquesInternes_0291419f72 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête gRPC\n(données\npolitiques)";
+    ]
+
+    server_BackendSpringBootServiceChatbot_f8af758679 -> server_BackendSpringBootServiceRAG_c76a0a7067 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête interne\n(recherche\ndocumentaire)";
+    ]
+
+    server_BackendSpringBootServiceRAG_c76a0a7067 -> datastore_PostgreSQLpgvectorEmbeddings_86e4604564 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête\nvectorielle\n(embeddings\nlocaux)";
+    ]
+
+    datastore_PostgreSQLpgvectorEmbeddings_86e4604564 -> server_BackendSpringBootServiceRAG_c76a0a7067 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Résultats\nvectoriels\n(documents\npertinents)";
+    ]
+
+    server_BackendSpringBootServiceRAG_c76a0a7067 -> externalentity_AzureOpenAI_f2eb7a3ff7 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête API\n(contexte +\nquestion)";
+    ]
+
+    externalentity_AzureOpenAI_f2eb7a3ff7 -> server_BackendSpringBootServiceRAG_c76a0a7067 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Réponse LLM (texte\ngénéré)";
+    ]
+
+    server_BackendSpringBootServiceRAG_c76a0a7067 -> server_BackendSpringBootServiceChatbot_f8af758679 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Réponse enrichie\n(RAG)";
+    ]
+
+    server_BackendSpringBootServiceCongés_2c440ebe53 -> datastore_PostgreSQLCongés_c6f87088c2 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête SQL\n(données congés)";
+    ]
+
+    datastore_PostgreSQLCongés_c6f87088c2 -> server_BackendSpringBootServiceCongés_2c440ebe53 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Données congés\n(résultats)";
+    ]
+
+    server_BackendSpringBootServicePolitiquesInternes_0291419f72 -> datastore_PostgreSQLPolitiquesInternes_9345ab4c19 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Requête SQL\n(données\npolitiques)";
+    ]
+
+    datastore_PostgreSQLPolitiquesInternes_9345ab4c19 -> server_BackendSpringBootServicePolitiquesInternes_0291419f72 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Données politiques\n(résultats)";
+    ]
+
+    server_BackendSpringBootServiceCongés_2c440ebe53 -> server_BackendSpringBootServiceChatbot_f8af758679 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Données congés\n(réponse)";
+    ]
+
+    server_BackendSpringBootServicePolitiquesInternes_0291419f72 -> server_BackendSpringBootServiceChatbot_f8af758679 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Données politiques\n(réponse)";
+    ]
+
+    server_BackendSpringBootServiceChatbot_f8af758679 -> server_FrontendReact_d2006ce1bb [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Réponse\nutilisateur\n(texte)";
+    ]
+
+    server_FrontendReact_d2006ce1bb -> actor_Utilisateur_579e9aae81 [
+        color = black;
+        fontcolor = black;
+        dir = forward;
+        label = "Affichage réponse\n(interface)";
+    ]
+
+}

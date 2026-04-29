@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+psycopg2-binary
+pydantic
+python-dotenv
+jinja2
+weasyprint
+pytm
+graphviz
+mistralai
+google-genai
+requests
+minio

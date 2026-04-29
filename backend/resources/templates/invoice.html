@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Modélisation des Menaces — {{ application_name }}</title>
+  <style>
+    :root {
+      --amber:    #B87200;
+      --amber-bg: #FFF8EC;
+      --amber-br: #EEC96A;
+      --red:      #B83030;
+      --red-bg:   #FDF2F0;
+      --red-br:   #E0A090;
+      --green:    #1A6E48;
+      --green-bg: #EEF8F3;
+      --green-br: #80CCA8;
+      --blue:     #2050A8;
+      --blue-bg:  #EEF2FC;
+      --blue-br:  #90B0E8;
+      --text:     #18182C;
+      --sub:      #50507A;
+      --muted:    #77779A;
+      --border:   #E2E2EE;
+      --bg:       #FFFFFF;
+      --card:     #FFFFFF;
+    }
+
+    * { box-sizing: border-box; }
+
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+    }
+
+    p {
+      margin: 0 0 4mm 0;
+    }
+
+    .top-accent {
+      height: 3mm;
+      background: linear-gradient(90deg, var(--amber), var(--red));
+      margin: -18mm -16mm 10mm -16mm;
+    }
+
+    .page {
+      width: 100%;
+    }
+
+    .cover {
+      min-height: 245mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16mm;
+    }
+
+    .cover-logo img {
+      max-height: 20mm;
+      width: auto;
+      display: block;
+    }
+
+    .doc-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .doc-meta .ref {
+      font-weight: 700;
+      font-size: 10pt;
+      color: var(--amber);
+    }
+
+    .cover-main {
+      margin-top: 10mm;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: var(--red-bg);
+      border: 1px solid var(--red-br);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 8pt;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 8mm;
+      font-weight: 700;
+    }
+
+    .cover-title {
+      font-size: 28pt;
+      line-height: 1.08;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .cover-title em {
+      font-style: normal;
+      color: var(--amber);
+    }
+
+    .cover-meta {
+      margin-top: 14mm;
+      padding-top: 7mm;
+      border-top: 1px solid var(--border);
+      font-size: 0;
+    }
+
+    .meta-item {
+      display: inline-block;
+      vertical-align: top;
+      width: 24%;
+      margin-right: 1%;
+      margin-bottom: 5mm;
+      font-size: 10pt;
+    }
+
+    .meta-item:last-child {
+      margin-right: 0;
+    }
+
+    .meta-item .lbl {
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1.5mm;
+    }
+
+    .meta-item .val {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      word-wrap: break-word;
+    }
+
+    .meta-item .val.accent {
+      color: var(--amber);
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9pt;
+      color: var(--muted);
+      margin-top: 14mm;
+      padding-top: 6mm;
+      border-top: 1px solid var(--border);
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--red-bg);
+      border: 1px solid var(--red-br);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 8pt;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-bottom: 14mm;
+      page-break-inside: auto;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5mm;
+      padding-bottom: 3mm;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-num {
+      display: inline-block;
+      font-size: 8pt;
+      color: var(--amber);
+      background: var(--amber-bg);
+      border: 1px solid var(--amber-br);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .section-title {
+      font-size: 14pt;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .app-grid {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5mm;
+      table-layout: fixed;
+    }
+
+    .app-grid td {
+      width: 33.33%;
+      border: 1px solid var(--border);
+      padding: 4mm;
+      vertical-align: top;
+      background: var(--card);
+    }
+
+    .app-card .lbl {
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5mm;
+      font-weight: 700;
+    }
+
+    .app-card .val {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      word-wrap: break-word;
+    }
+
+    .app-desc {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5mm;
+      color: var(--sub);
+      background: var(--card);
+      text-align: justify;
+    }
+
+    .dfd-wrap {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--card);
+      page-break-inside: avoid;
+    }
+
+    .dfd-bar {
+      padding: 4mm 5mm;
+      border-bottom: 1px solid var(--border);
+      background: #F5F6FA;
+      position: relative;
+    }
+
+    .dfd-bar-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1mm;
+    }
+
+    .dfd-bar-sub {
+      font-size: 8.5pt;
+      color: var(--muted);
+    }
+
+    .dfd-lvl {
+      position: absolute;
+      top: 4mm;
+      right: 5mm;
+      background: var(--blue-bg);
+      border: 1px solid var(--blue-br);
+      color: var(--blue);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 8pt;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .dfd-img {
+      padding: 5mm;
+      text-align: center;
+    }
+
+    .dfd-img img {
+      max-width: 100%;
+      max-height: 160mm;
+      width: auto;
+      height: auto;
+      display: inline-block;
+      border: 1px solid var(--border);
+    }
+
+    .dfd-empty {
+      padding: 10mm;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .dfd-caption {
+      padding: 4mm 5mm;
+      border-top: 1px solid var(--border);
+      background: #F5F6FA;
+      font-size: 8.5pt;
+      color: var(--muted);
+    }
+
+    .dfd-caption-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .dfd-caption-table td {
+      padding: 0;
+      border: none;
+      vertical-align: top;
+    }
+
+    .dfd-caption-right {
+      text-align: right;
+    }
+
+    .dfd-ref {
+      display: inline-block;
+      background: #ECECF4;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 8pt;
+      color: var(--muted);
+      font-style: normal;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    table.report-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    table.report-table thead {
+      display: table-header-group;
+    }
+
+    table.report-table tr {
+      page-break-inside: avoid;
+    }
+
+    table.report-table th {
+      background: #F2F3F8;
+      border-bottom: 1px solid var(--border);
+      padding: 4mm;
+      text-align: left;
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    table.report-table td {
+      border-bottom: 1px solid #ECECF4;
+      padding: 4mm;
+      vertical-align: top;
+      font-size: 9pt;
+      color: var(--sub);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    table.report-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .name-cell {
+      color: var(--text);
+      font-weight: 700;
+      white-space: normal;
+    }
+
+    .subsection-note {
+      margin-bottom: 4mm;
+      color: var(--muted);
+      font-size: 9pt;
+    }
+
+    .report-footer {
+      margin-top: 14mm;
+      padding-top: 5mm;
+      border-top: 1px solid var(--border);
+      font-size: 9pt;
+      color: var(--muted);
+    }
+
+    .footer-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .footer-table td {
+      border: none;
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    .footer-center {
+      text-align: center;
+    }
+
+    .footer-right {
+      text-align: right;
+    }
+
+    .footer-brand {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-accent"></div>
+
+  <div class="page">
+
+    <div class="cover">
+      <div>
+        <div class="cover-top">
+          <div class="cover-logo">
+            {% if logo_path %}
+              <img src="{{ logo_path }}" alt="Logo" />
+            {% endif %}
+          </div>
+
+          <div class="doc-meta">
+            <div class="ref">{{ report_ref | default("TM-2026-001") }}</div>
+            <div>Version {{ version | default("1.0") }}</div>
+            <div>{{ report_date | default("2026-03-29") }}</div>
+          </div>
+        </div>
+
+        <div class="cover-main">
+          <div class="cover-badge">Modélisation des Menaces</div>
+          <h1 class="cover-title">
+            Analyse des<br>
+            <em>Menaces</em>
+          </h1>
+        </div>
+
+        <div class="cover-meta">
+          <div class="meta-item">
+            <div class="lbl">Application</div>
+            <div class="val">{{ application_name }}</div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Environnement</div>
+            <div class="val">{{ application_env | default("Production") }}</div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Auteur</div>
+            <div class="val">{{ author | default("Équipe Sécurité") }}</div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Menaces identifiées</div>
+            <div class="val accent">{{ total_threats | default(0) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <span>{{ company_name }}</span>
+        <span class="tag">{{ classification | default("CONFIDENTIEL") }}</span>
+        <span>{{ report_date | default("2026-03-29") }}</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Description de l'Application</h2>
+      </div>
+
+      <table class="app-grid">
+        <tr>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Nom</div>
+              <div class="val">{{ application_name }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Version</div>
+              <div class="val">{{ application_version | default("N/A") }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Stack technique</div>
+              <div class="val">{{ tech_stack | default("N/A") }}</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="app-desc">
+        {% if application_description %}
+          {{ application_description }}
+        {% else %}
+          <em style="color: var(--muted);">Description non disponible.</em>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Diagramme de Flux de Données</h2>
+      </div>
+
+      <div class="dfd-wrap">
+        <div class="dfd-bar">
+          <div class="dfd-bar-title">{{ application_name }} — DFD</div>
+          <div class="dfd-bar-sub">{{ dfd_level | default("Niveau 0 — Diagramme de contexte") }}</div>
+          <span class="dfd-lvl">{{ dfd_level | default("Niveau 0") }}</span>
+        </div>
+
+        {% if dfd_image %}
+          <div class="dfd-img">
+            <img src="{{ dfd_image }}" alt="DFD — {{ application_name }}" />
+          </div>
+        {% else %}
+          <div class="dfd-empty">
+            Aucun diagramme DFD n'a pu être généré pour cette analyse.
+          </div>
+        {% endif %}
+
+        <div class="dfd-caption">
+          <table class="dfd-caption-table">
+            <tr>
+              <td>{{ dfd_caption | default("Figure 1 — Flux de données et frontières de confiance.") }}</td>
+              <td class="dfd-caption-right">
+                <span class="dfd-ref">DFD-01</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2 class="section-title">Menaces Retenues du Catalogue</h2>
+      </div>
+
+      <div class="subsection-note">
+        Menaces issues du catalogue et retenues selon le contexte technique et fonctionnel de l application.
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Menace</th>
+              <th style="width: 72%;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if threats_table %}
+              {% for t in threats_table %}
+              <tr>
+                <td class="name-cell">{{ t.menace }}</td>
+                <td>{{ t.description | default("—") }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="2">Aucune menace issue du catalogue n'a ete retenue.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Scenarios d Attaque</h2>
+      </div>
+
+      <div class="subsection-note">
+        Scenarios d attaque selectionnes selon l architecture et les composants identifies.
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 26%;">Menace</th>
+              <th style="width: 74%;">Scenario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if attack_scenarios %}
+              {% for scenario in attack_scenarios %}
+              <tr>
+                <td class="name-cell">{{ scenario.threat_name }}</td>
+                <td>{{ scenario.description | default("—") }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="2">Aucun scenario d attaque n'a ete retenu.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2 class="section-title">Mitigations</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Mitigation à appliquer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if mitigations %}
+              {% for m in mitigations %}
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">{{ m.description }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td>Aucune mitigation n'a été produite.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="report-footer">
+      <table class="footer-table">
+        <tr>
+          <td class="footer-brand">{{ company_name }}</td>
+          <td class="footer-center">{{ report_ref | default("TM-2026-001") }} · v{{ version | default("1.0") }}</td>
+          <td class="footer-right">
+            <span class="tag">{{ classification | default("CONFIDENTIEL") }}</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+</body>
+</html>

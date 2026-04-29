@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Env
+.env
+venv/
+backend/venv/
+
+# Generated files
+backend/resources/out/
+backend/resources/pdf/
+
+# OS
+.DS_Store

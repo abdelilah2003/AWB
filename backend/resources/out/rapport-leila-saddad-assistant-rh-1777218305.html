@@ -1,0 +1,2198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Modélisation des Menaces — assistant RH </title>
+  <style>
+    :root {
+      --amber:    #B87200;
+      --amber-bg: #FFF8EC;
+      --amber-br: #EEC96A;
+      --red:      #B83030;
+      --red-bg:   #FDF2F0;
+      --red-br:   #E0A090;
+      --green:    #1A6E48;
+      --green-bg: #EEF8F3;
+      --green-br: #80CCA8;
+      --blue:     #2050A8;
+      --blue-bg:  #EEF2FC;
+      --blue-br:  #90B0E8;
+      --text:     #18182C;
+      --sub:      #50507A;
+      --muted:    #77779A;
+      --border:   #E2E2EE;
+      --bg:       #FFFFFF;
+      --card:     #FFFFFF;
+    }
+
+    * { box-sizing: border-box; }
+
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.55;
+    }
+
+    p {
+      margin: 0 0 4mm 0;
+    }
+
+    .top-accent {
+      height: 3mm;
+      background: linear-gradient(90deg, var(--amber), var(--red));
+      margin: -18mm -16mm 10mm -16mm;
+    }
+
+    .page {
+      width: 100%;
+    }
+
+    .cover {
+      min-height: 245mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+    }
+
+    .cover-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16mm;
+    }
+
+    .cover-logo img {
+      max-height: 20mm;
+      width: auto;
+      display: block;
+    }
+
+    .doc-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .doc-meta .ref {
+      font-weight: 700;
+      font-size: 10pt;
+      color: var(--amber);
+    }
+
+    .cover-main {
+      margin-top: 10mm;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: var(--red-bg);
+      border: 1px solid var(--red-br);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 8pt;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 8mm;
+      font-weight: 700;
+    }
+
+    .cover-title {
+      font-size: 28pt;
+      line-height: 1.08;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .cover-title em {
+      font-style: normal;
+      color: var(--amber);
+    }
+
+    .cover-meta {
+      margin-top: 14mm;
+      padding-top: 7mm;
+      border-top: 1px solid var(--border);
+      font-size: 0;
+    }
+
+    .meta-item {
+      display: inline-block;
+      vertical-align: top;
+      width: 24%;
+      margin-right: 1%;
+      margin-bottom: 5mm;
+      font-size: 10pt;
+    }
+
+    .meta-item:last-child {
+      margin-right: 0;
+    }
+
+    .meta-item .lbl {
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 1.5mm;
+    }
+
+    .meta-item .val {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      word-wrap: break-word;
+    }
+
+    .meta-item .val.accent {
+      color: var(--amber);
+    }
+
+    .cover-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9pt;
+      color: var(--muted);
+      margin-top: 14mm;
+      padding-top: 6mm;
+      border-top: 1px solid var(--border);
+    }
+
+    .tag {
+      display: inline-block;
+      background: var(--red-bg);
+      border: 1px solid var(--red-br);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 8pt;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-bottom: 14mm;
+      page-break-inside: auto;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5mm;
+      padding-bottom: 3mm;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-num {
+      display: inline-block;
+      font-size: 8pt;
+      color: var(--amber);
+      background: var(--amber-bg);
+      border: 1px solid var(--amber-br);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .section-title {
+      font-size: 14pt;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .app-grid {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 5mm;
+      table-layout: fixed;
+    }
+
+    .app-grid td {
+      width: 33.33%;
+      border: 1px solid var(--border);
+      padding: 4mm;
+      vertical-align: top;
+      background: var(--card);
+    }
+
+    .app-card .lbl {
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5mm;
+      font-weight: 700;
+    }
+
+    .app-card .val {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      word-wrap: break-word;
+    }
+
+    .app-desc {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5mm;
+      color: var(--sub);
+      background: var(--card);
+      text-align: justify;
+    }
+
+    .dfd-wrap {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--card);
+      page-break-inside: avoid;
+    }
+
+    .dfd-bar {
+      padding: 4mm 5mm;
+      border-bottom: 1px solid var(--border);
+      background: #F5F6FA;
+      position: relative;
+    }
+
+    .dfd-bar-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1mm;
+    }
+
+    .dfd-bar-sub {
+      font-size: 8.5pt;
+      color: var(--muted);
+    }
+
+    .dfd-lvl {
+      position: absolute;
+      top: 4mm;
+      right: 5mm;
+      background: var(--blue-bg);
+      border: 1px solid var(--blue-br);
+      color: var(--blue);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 8pt;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .dfd-img {
+      padding: 5mm;
+      text-align: center;
+    }
+
+    .dfd-img img {
+      max-width: 100%;
+      max-height: 160mm;
+      width: auto;
+      height: auto;
+      display: inline-block;
+      border: 1px solid var(--border);
+    }
+
+    .dfd-empty {
+      padding: 10mm;
+      text-align: center;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .dfd-caption {
+      padding: 4mm 5mm;
+      border-top: 1px solid var(--border);
+      background: #F5F6FA;
+      font-size: 8.5pt;
+      color: var(--muted);
+    }
+
+    .dfd-caption-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .dfd-caption-table td {
+      padding: 0;
+      border: none;
+      vertical-align: top;
+    }
+
+    .dfd-caption-right {
+      text-align: right;
+    }
+
+    .dfd-ref {
+      display: inline-block;
+      background: #ECECF4;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 8pt;
+      color: var(--muted);
+      font-style: normal;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    table.report-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    table.report-table thead {
+      display: table-header-group;
+    }
+
+    table.report-table tr {
+      page-break-inside: avoid;
+    }
+
+    table.report-table th {
+      background: #F2F3F8;
+      border-bottom: 1px solid var(--border);
+      padding: 4mm;
+      text-align: left;
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    table.report-table td {
+      border-bottom: 1px solid #ECECF4;
+      padding: 4mm;
+      vertical-align: top;
+      font-size: 9pt;
+      color: var(--sub);
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    table.report-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .name-cell {
+      color: var(--text);
+      font-weight: 700;
+      white-space: normal;
+    }
+
+    .subsection-note {
+      margin-bottom: 4mm;
+      color: var(--muted);
+      font-size: 9pt;
+    }
+
+    .report-footer {
+      margin-top: 14mm;
+      padding-top: 5mm;
+      border-top: 1px solid var(--border);
+      font-size: 9pt;
+      color: var(--muted);
+    }
+
+    .footer-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .footer-table td {
+      border: none;
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    .footer-center {
+      text-align: center;
+    }
+
+    .footer-right {
+      text-align: right;
+    }
+
+    .footer-brand {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .avoid-break {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-accent"></div>
+
+  <div class="page">
+
+    <div class="cover">
+      <div>
+        <div class="cover-top">
+          <div class="cover-logo">
+            
+              <img src="file:///C:/Users/walid/Desktop/AWB_PROJECTS/APP_AWB_2%20-%20Copie/backend/resources/assets/AWB_LOGO.png" alt="Logo" />
+            
+          </div>
+
+          <div class="doc-meta">
+            <div class="ref">TM-20260426-154819</div>
+            <div>Version 1.0</div>
+            <div>2026-04-26</div>
+          </div>
+        </div>
+
+        <div class="cover-main">
+          <div class="cover-badge">Modélisation des Menaces</div>
+          <h1 class="cover-title">
+            Analyse des<br>
+            <em>Menaces</em>
+          </h1>
+        </div>
+
+        <div class="cover-meta">
+          <div class="meta-item">
+            <div class="lbl">Application</div>
+            <div class="val">assistant RH </div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Environnement</div>
+            <div class="val">Production</div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Auteur</div>
+            <div class="val">leila saddad</div>
+          </div>
+
+          <div class="meta-item">
+            <div class="lbl">Menaces identifiées</div>
+            <div class="val accent">37</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <span>Attijariwafa Bank</span>
+        <span class="tag">CONFIDENTIEL</span>
+        <span>2026-04-26</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Description de l'Application</h2>
+      </div>
+
+      <table class="app-grid">
+        <tr>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Nom</div>
+              <div class="val">assistant RH </div>
+            </div>
+          </td>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Version</div>
+              <div class="val">v1.0</div>
+            </div>
+          </td>
+          <td>
+            <div class="app-card">
+              <div class="lbl">Stack technique</div>
+              <div class="val">FastAPI / Mistral / Gemini / pytm / WeasyPrint</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="app-desc">
+        
+          L&#39;assistant RH est une application web interne de niveau critique medium, conçue pour répondre aux questions des employés sur les congés, politiques internes et démarches administratives via un chatbot intégré. Architecturée en trois tiers avec une approche microservices, elle repose sur un frontend React communiquant en REST avec un backend Spring Boot, tandis que chaque microservice dispose de sa propre base de données PostgreSQL on-premise, incluant une instance dédiée pgvector pour le stockage des embeddings locaux. L&#39;application exploite un modèle LLM externe Azure OpenAI en lecture seule, consommé via API et enrichi par une architecture RAG s&#39;appuyant sur les documents internes indexés dans pgvector, sans possibilité d&#39;appeler des outils externes ou de déclencher des actions automatisées. Les microservices communiquent entre eux via gRPC sans broker intermédiaire, et aucun flux sortant (emails, uploads) ou centralisation des logs n&#39;est implémenté. Les données sensibles, exclusivement des documents internes, sont isolées dans la zone on-premise, tandis que l&#39;interaction utilisateur se limite à un navigateur web sans accès direct aux composants backend ou LLM. Les principaux risques à modéliser concernent l&#39;exposition des données sensibles via le chatbot, les échanges gRPC internes non sécurisés, l&#39;intégrité des embeddings locaux, et la dépendance à l&#39;API externe Azure OpenAI pour les réponses en temps réel.
+        
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Diagramme de Flux de Données</h2>
+      </div>
+
+      <div class="dfd-wrap">
+        <div class="dfd-bar">
+          <div class="dfd-bar-title">assistant RH  — DFD</div>
+          <div class="dfd-bar-sub">Niveau 0</div>
+          <span class="dfd-lvl">Niveau 0</span>
+        </div>
+
+        
+          <div class="dfd-img">
+            <img src="file:///C:/Users/walid/Desktop/AWB_PROJECTS/APP_AWB_2%20-%20Copie/backend/resources/out/diagrams/dfd_1777218305.png" alt="DFD — assistant RH " />
+          </div>
+        
+
+        <div class="dfd-caption">
+          <table class="dfd-caption-table">
+            <tr>
+              <td>Figure 1 - Diagramme de flux de donnees et frontieres de confiance.</td>
+              <td class="dfd-caption-right">
+                <span class="dfd-ref">DFD-01</span>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2 class="section-title">Menaces Retenues du Catalogue</h2>
+      </div>
+
+      <div class="subsection-note">
+        Menaces issues du catalogue et retenues selon le contexte technique et fonctionnel de l application.
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Menace</th>
+              <th style="width: 72%;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              
+              <tr>
+                <td class="name-cell">SQL injection</td>
+                <td>Consiste à injecter des requêtes SQL malveillantes dans la base de données PostgreSQL de l&#39;assistant RH à travers les entrées utilisateur non sécurisées, exploitant la communication entre le backend Spring Boot et les bases de données dédiées des microservices.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Bruteforce</td>
+                <td>Consiste à tenter d’accéder à l&#39;assistant RH ou à ses ressources protégées en testant systématiquement toutes les valeurs possibles pour les identifiants ou les tokens d&#39;authentification.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Command injection</td>
+                <td>Consiste à injecter des commandes système malveillantes dans le backend Spring Boot de l&#39;assistant RH, si celui-ci exécute des commandes OS via des entrées utilisateur non sécurisées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Request Forgery</td>
+                <td>Consiste à forcer un utilisateur authentifié de l&#39;assistant RH à exécuter une action non désirée sur l&#39;application web, à son insu, via des requêtes HTTP forgées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Scripting ( XSS )</td>
+                <td>Consiste à injecter du code JavaScript malveillant dans l&#39;application web React de l&#39;assistant RH à travers des entrées utilisateur non filtrées, affectant d&#39;autres utilisateurs ou la victime elle-même.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Directory Traversal</td>
+                <td>Consiste à manipuler les chemins de fichiers dans l&#39;assistant RH pour accéder à des fichiers ou répertoires en dehors du répertoire autorisé, notamment des documents internes sensibles ou des fichiers de configuration.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Distributed Denial of Service</td>
+                <td>Consiste à submerger l&#39;assistant RH avec un grand volume de trafic provenant de multiples sources afin de le rendre indisponible, ciblant le frontend, le backend ou l&#39;API Azure OpenAI.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Fuzzing</td>
+                <td>Consiste à envoyer des entrées aléatoires ou malformées aux différents composants de l&#39;assistant RH (frontend, backend, chatbot, RAG) afin de provoquer des comportements anormaux et identifier des vulnérabilités.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">HTTP Request Smuggling</td>
+                <td>Consiste à exploiter une désynchronisation entre les composants front-end et back-end de l&#39;assistant RH pour injecter une requête HTTP cachée, contournant les contrôles de sécurité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">IDOR exploitation</td>
+                <td>Consiste à exploiter une vulnérabilité IDOR (Insecure Direct Object Reference) dans les APIs REST de l&#39;assistant RH en manipulant des identifiants pour accéder à des ressources (documents, données utilisateurs) sans autorisation.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Information Disclosure</td>
+                <td>Consiste à exposer des informations sensibles sur l&#39;assistant RH ou ses utilisateurs à des acteurs non autorisés, en raison d’une mauvaise sécurisation du système ou de ses composants (logs, messages d&#39;erreur, fichiers de configuration).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Inter-Agent Communication Poisoning</td>
+                <td>Consiste à altérer sémantiquement les messages échangés entre les microservices de l&#39;assistant RH via gRPC afin qu’un microservice destinataire raisonne ou agisse sur une information fausse ou porteuse d’instructions adversariales.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Jwt manipulation</td>
+                <td>Consiste à exploiter des failles dans la gestion des JSON Web Tokens (JWT) utilisés pour l&#39;authentification et l&#39;autorisation dans l&#39;API REST de l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Man-in-the-Middle</td>
+                <td>Consiste à intercepter et éventuellement modifier les communications entre les utilisateurs et l&#39;assistant RH (frontend-backend) ou entre les microservices (gRPC) sans qu’elles s’en rendent compte.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Oauth Abuse</td>
+                <td>Consiste à exploiter des failles dans le flux OAuth (si utilisé) de l&#39;assistant RH pour obtenir des tokens d’accès ou usurper un utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Password Reset takeover</td>
+                <td>Consiste à exploiter des failles dans le mécanisme de réinitialisation de mot de passe de l&#39;assistant RH afin de prendre le contrôle du compte d’un employé sans disposer de ses identifiants.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Race Condition</td>
+                <td>Consiste à exploiter un problème de concurrence où plusieurs requêtes ou processus modifient une ressource de l&#39;assistant RH (ex: données utilisateur, statut de document) en même temps, menant à un état incohérent ou à des actions non autorisées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Request Forgery ( SSRF )</td>
+                <td>Consiste à exploiter une mauvaise validation des entrées dans le backend Spring Boot de l&#39;assistant RH pour forcer le serveur à envoyer des requêtes vers des ressources internes (autres microservices, bases de données) ou externes (métadonnées Azure) avec ses propres privilèges.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Template Injection</td>
+                <td>Consiste à injecter du code malveillant dans un moteur de template côté serveur (Spring Boot) si l&#39;assistant RH utilise des templates avec des entrées utilisateur non sécurisées, afin d’exécuter du code ou manipuler le rendu.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Session Fixation</td>
+                <td>Consiste à forcer un utilisateur de l&#39;assistant RH à utiliser un identifiant de session connu par l’attaquant afin de prendre le contrôle de sa session après authentification.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">User Impersonation</td>
+                <td>Usurpation d’identité d&#39;un employé légitime, permettant à un attaquant d&#39;interagir avec l&#39;assistant RH et d&#39;exécuter des actions ou d&#39;accéder à des informations en son nom.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Authentication</td>
+                <td>Les mécanismes d&#39;authentification de l&#39;API REST de l&#39;assistant RH présentent des failles (brute-force, jeton faible, absence de ré-authentification) permettant la prise de contrôle de comptes d&#39;employés.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Level Authorization</td>
+                <td>L&#39;API REST de l&#39;assistant RH n&#39;applique pas de contrôle de propriété sur chaque ressource accédée au niveau de ses microservices, permettant à tout utilisateur authentifié de lire ou modifier les objets d&#39;autrui en substituant l&#39;identifiant dans la requête.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Property Level Authorization</td>
+                <td>L&#39;API REST de l&#39;assistant RH expose des propriétés d&#39;objets sensibles dans ses réponses ou accepte leur modification sans contrôle granulaire au niveau du champ, notamment pour les documents internes ou les données utilisateurs.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Buffer Manipulation</td>
+                <td>Consiste à manipuler un buffer mémoire dans les composants de l&#39;assistant RH (backend, traitement des embeddings) en fournissant plus de données que sa capacité, entraînant l’écrasement de la mémoire adjacente et un comportement imprévu du programme.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">deserialization injection</td>
+                <td>Consiste à exploiter la désérialisation de données non fiables dans le backend Spring Boot de l&#39;assistant RH pour manipuler des objets ou exécuter du code malveillant, si l&#39;application utilise des mécanismes de sérialisation non sécurisés.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">File Inclusion</td>
+                <td>Consiste à exploiter l&#39;assistant RH pour inclure et exécuter des fichiers locaux via des entrées utilisateur non sécurisées, potentiellement pour accéder à des documents internes ou exécuter du code sur le serveur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">AI supply chain tampering</td>
+                <td>Consiste à compromettre un composant de la chaîne d’approvisionnement de l&#39;intelligence artificielle de l&#39;assistant RH (notamment les documents internes, les embeddings locaux dans pgvector ou les dépendances du pipeline RAG) afin d’introduire un comportement malveillant ou des données altérées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Data Poisoning</td>
+                <td>Consiste à manipuler intentionnellement les documents internes ou les embeddings stockés dans pgvector pour la RAG afin d’altérer le comportement, les performances ou les décisions du modèle LLM externe via le contexte fourni.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Direct prompt injection</td>
+                <td>Consiste à injecter des instructions malveillantes directement dans les requêtes utilisateur (prompts) soumises au chatbot de l&#39;assistant RH afin de manipuler le comportement du modèle LLM externe.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Indirect prompt injection</td>
+                <td>Consiste à injecter des instructions malveillantes dans les documents internes indexés dans pgvector pour la RAG, que le modèle LLM externe de l&#39;assistant RH va ensuite lire et exécuter indirectement lors de la génération de réponses.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Long-term Memory Poisoning</td>
+                <td>Injection ou altération d’informations malveillantes dans la mémoire persistante de l&#39;assistant RH (les embeddings locaux dans pgvector) afin d’influencer durablement son comportement et ses réponses.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model denial of service</td>
+                <td>Consiste à exploiter les limites computationnelles ou opérationnelles du LLM externe Azure OpenAI ou des composants RAG de l&#39;assistant RH en générant une charge excessive afin de dégrader ses performances ou provoquer son indisponibilité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">ML model evasion</td>
+                <td>Consiste à manipuler les entrées d’un modèle LLM externe de l&#39;assistant RH (prompts et contenu RAG) afin de contourner ses prédictions ou décisions lors de l’inférence.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model stealing</td>
+                <td>Consiste à accéder, copier, extraire ou reconstruire le comportement du LLM externe (via l&#39;API) ou les embeddings locaux de l&#39;assistant RH (dans pgvector) sans autorisation, afin de créer un modèle équivalent ou exploiter sa propriété intellectuelle.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model Tampering</td>
+                <td>Consiste à compromettre l’intégrité du &#39;modèle&#39; de l&#39;assistant RH en modifiant les documents internes ou les embeddings stockés dans pgvector, afin d’introduire un biais ou un comportement malveillant persistant.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Short-term Memory Poisoning</td>
+                <td>Injection ou altération d’informations malveillantes dans la mémoire temporaire de l&#39;assistant RH (contexte conversationnel du chatbot, résultats RAG temporaires) afin d’influencer son état de travail, son raisonnement ou ses décisions pendant la session en cours.</td>
+              </tr>
+              
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Scenarios d Attaque</h2>
+      </div>
+
+      <div class="subsection-note">
+        Scenarios d attaque selectionnes selon l architecture et les composants identifies.
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 26%;">Menace</th>
+              <th style="width: 74%;">Scenario</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              
+              <tr>
+                <td class="name-cell">SQL injection</td>
+                <td>Un attaquant injecte du code SQL dans un formulaire de connexion pour se connecter sans identifiants valides à l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">SQL injection</td>
+                <td>Un attaquant exploite une vulnérabilité SQL Injection pour extraire des informations sensibles, notamment des documents internes ou des données d&#39;employés, de la base de données PostgreSQL.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">SQL injection</td>
+                <td>Un attaquant injecte des commandes SQL pour modifier ou supprimer des données dans la base de données PostgreSQL, altérant par exemple les enregistrements de congés ou les politiques internes.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Bruteforce</td>
+                <td>Un attaquant teste plusieurs combinaisons d&#39;identifiant et de mot de passe sur l&#39;interface de login de l&#39;assistant RH pour trouver le bon.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Bruteforce</td>
+                <td>Un attaquant utilise une base de données d&#39;identifiants volés (credential stuffing) pour tester massivement ces combinaisons sur l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Bruteforce</td>
+                <td>Un attaquant déduit que les identifiants de session ou les clés d&#39;API sont générés de manière prévisible et lance une attaque par force brute ciblée pour deviner une session valide ou une clé API.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Command injection</td>
+                <td>Un attaquant injecte une commande dans un champ de l&#39;application pour exécuter des commandes système sur le serveur du backend.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Command injection</td>
+                <td>Un attaquant injecte une commande pour lire des fichiers critiques du serveur, comme des fichiers de configuration ou des clés API, exposant des informations sensibles.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Command injection</td>
+                <td>Un attaquant injecte des commandes pour installer un backdoor ou lancer des scripts malveillants sur le serveur hébergeant l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Request Forgery</td>
+                <td>Un attaquant pousse un utilisateur authentifié à cliquer sur un lien malveillant ou une pièce jointe qui déclenche une action non désirée sur l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Request Forgery</td>
+                <td>Un attaquant force une requête pour modifier les informations personnelles d&#39;un utilisateur, comme son adresse e-mail ou son mot de passe, dans l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Request Forgery</td>
+                <td>Un attaquant force la victime à envoyer une requête critique (ex: consulter un document sensible) sans son consentement, en utilisant sa session authentifiée.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Scripting ( XSS )</td>
+                <td>Un attaquant injecte un script malveillant dans un champ de saisie du chatbot ou un profil utilisateur pour récupérer les cookies de session d’un autre employé.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Scripting ( XSS )</td>
+                <td>Un attaquant injecte du JavaScript pour modifier la page affichée de l&#39;assistant RH, par exemple en ajoutant un faux formulaire de connexion.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Cross-Site Scripting ( XSS )</td>
+                <td>Un attaquant injecte un script qui redirige les utilisateurs vers un site de phishing externe après qu&#39;ils aient interagi avec l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Directory Traversal</td>
+                <td>Un attaquant modifie un paramètre de chemin de fichier dans une requête HTTP pour accéder à des fichiers système critiques comme /etc/passwd ou des fichiers de configuration de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Directory Traversal</td>
+                <td>Un attaquant accède à des fichiers internes sensibles (fichiers de configurations, clés API) qui ne devraient pas être exposés, en manipulant les entrées de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Directory Traversal</td>
+                <td>Un attaquant accède à des fichiers sensibles permettant d’exécuter du code ou modifier le comportement du système en sortant du répertoire prévu.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Distributed Denial of Service</td>
+                <td>Un attaquant envoie un énorme volume de requêtes HTTP depuis plusieurs machines pour saturer les ressources du frontend ou du backend de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Distributed Denial of Service</td>
+                <td>Un attaquant envoie des requêtes HTTP légitimes mais massives pour surcharger l&#39;application et l&#39;API Azure OpenAI, augmentant les coûts et dégradant les performances.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Distributed Denial of Service</td>
+                <td>Un attaquant exploite des faiblesses applicatives ou des requêtes coûteuses pour maximiser la consommation de ressources du backend ou de l&#39;API LLM, entraînant une indisponibilité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Fuzzing</td>
+                <td>Un attaquant envoie des données malformées aux endpoints REST ou aux requêtes du chatbot pour faire planter le backend Spring Boot ou le processus RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Fuzzing</td>
+                <td>Un attaquant envoie des entrées variées et inattendues pour détecter des failles de traitement ou des vulnérabilités dans le parsing des requêtes ou des documents.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Fuzzing</td>
+                <td>Un attaquant teste des cas limites (inputs extrêmes, formats spéciaux) pour contourner les filtres de validation des entrées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">HTTP Request Smuggling</td>
+                <td>Un attaquant injecte une requête HTTP cachée pour contourner les contrôles de sécurité du reverse proxy ou du WAF et accéder à des ressources internes du backend Spring Boot.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">HTTP Request Smuggling</td>
+                <td>Un attaquant manipule les requêtes HTTP pour interférer avec celles d’autres utilisateurs, potentiellement pour récupérer leurs données ou leur faire exécuter des actions non autorisées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">HTTP Request Smuggling</td>
+                <td>Un attaquant envoie des requêtes malformées pour altérer le traitement des requêtes suivantes par le backend, provoquant un déni de service ou une fuite d&#39;informations.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">IDOR exploitation</td>
+                <td>Un attaquant modifie un identifiant d&#39;un document RH dans une requête API pour consulter les informations d’un autre utilisateur qu&#39;il n&#39;est pas censé voir.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">IDOR exploitation</td>
+                <td>Un attaquant change un identifiant d&#39;un enregistrement (ex: congé, politique) pour modifier les données d’un autre utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">IDOR exploitation</td>
+                <td>Un attaquant manipule un identifiant pour accéder à des ressources ou actions réservées à des utilisateurs privilégiés ou à d&#39;autres microservices.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Information Disclosure</td>
+                <td>Un attaquant accède à des fichiers contenant des informations sensibles (ex: mots de passe dans les configurations) en raison d’une mauvaise configuration des permissions du système.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Information Disclosure</td>
+                <td>Un attaquant exploite des messages d’erreur détaillés du backend Spring Boot pour obtenir des informations sur le système (chemins, version de la base de données PostgreSQL, structure interne).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Information Disclosure</td>
+                <td>Un attaquant accède à des répertoires, sauvegardes ou fichiers de configuration de l&#39;application exposés publiquement sur le serveur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Information Disclosure</td>
+                <td>Un attaquant obtient des informations sensibles via des en-têtes HTTP, des métadonnées ou des bannières système trop verbeuses exposées par l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Inter-Agent Communication Poisoning</td>
+                <td>Un attaquant compromet le canal de communication gRPC entre deux microservices, puis intercepte, modifie, bloque, duplique ou reroute des messages avant leur réception.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Inter-Agent Communication Poisoning</td>
+                <td>Un attaquant injecte ou modifie des champs structurés dans un message gRPC inter-microservices (ex: identifiant de document, chunk d&#39;embedding) afin de fausser son interprétation ou son exécution par le microservice receveur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Inter-Agent Communication Poisoning</td>
+                <td>Un attaquant rejoue un message gRPC précédemment valide, ou le réinjecte dans un ordre non prévu, afin de provoquer une exécution redondante, obsolète ou incohérente avec l’état courant de l&#39;application (ex: altération des embeddings dans pgvector).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Jwt manipulation</td>
+                <td>Un attaquant modifie le header du JWT pour désactiver la signature (ex: &#39;alg&#39;:&#39;none&#39;) et forge un token valide que l&#39;API accepte.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Jwt manipulation</td>
+                <td>Un attaquant modifie le payload d&#39;un JWT pour s&#39;attribuer des rôles administratifs ou des permissions plus élevées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Jwt manipulation</td>
+                <td>Un attaquant exploite une mauvaise gestion des clés de signature JWT (clé faible, exposée ou réutilisée) pour signer ses propres tokens malveillants.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Man-in-the-Middle</td>
+                <td>Un attaquant intercepte le trafic réseau (ex: sur un réseau interne non sécurisé ou un point d&#39;accès Wi-Fi compromis) pour lire les informations échangées (requêtes, réponses, tokens de session).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Man-in-the-Middle</td>
+                <td>Un attaquant se fait passer pour le serveur backend ou le client (utilisateur) en présentant de faux certificats, afin d&#39;intercepter toutes les communications.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Man-in-the-Middle</td>
+                <td>Un attaquant intercepte et modifie les données échangées entre le client et le serveur ou entre microservices (gRPC) pour altérer les informations ou injecter du contenu malveillant.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Oauth Abuse</td>
+                <td>Un attaquant modifie le &#39;redirect_uri&#39; dans la requête OAuth pour rediriger le code d&#39;autorisation ou le token d&#39;accès vers son propre serveur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Oauth Abuse</td>
+                <td>Un attaquant envoie un lien OAuth piégé à la victime pour que l&#39;application associe la session de la victime au compte de l&#39;attaquant (session poisoning).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Oauth Abuse</td>
+                <td>Un attaquant récupère un token OAuth exposé (par exemple, dans une URL, un log ou le stockage local du navigateur) et le réutilise pour usurper l&#39;identité de l&#39;utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Password Reset takeover</td>
+                <td>Un attaquant génère ou devine un token de réinitialisation car celui-ci est court, non aléatoire ou basé sur des valeurs prévisibles.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Password Reset takeover</td>
+                <td>Un attaquant modifie la requête de réinitialisation (ex: en-tête &#39;Host&#39; ou paramètre &#39;email&#39;) pour que le lien de réinitialisation soit envoyé vers lui ou un domaine contrôlé par lui.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Password Reset takeover</td>
+                <td>Un attaquant envoie directement la requête de changement de mot de passe sans que le token de réinitialisation ne soit correctement vérifié côté serveur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Race Condition</td>
+                <td>Un attaquant envoie plusieurs requêtes simultanées pour modifier une ressource (ex: un paramètre de configuration, un statut de congé) avant que le système ne soit mis à jour correctement.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Race Condition</td>
+                <td>Un attaquant exploite un décalage entre une vérification d&#39;autorisation et une exécution d&#39;action (Time-of-Check to Time-of-Use - TOCTOU) pour accéder à une ressource protégée.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Race Condition</td>
+                <td>Un attaquant déclenche des opérations concurrentes provoquant des états incohérents dans la base de données PostgreSQL ou les microservices, menant à des erreurs ou à des comportements imprévus.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Request Forgery ( SSRF )</td>
+                <td>Un attaquant manipule une entrée de l&#39;application pour forcer le backend à envoyer des requêtes vers d&#39;autres systèmes internes (par exemple, d&#39;autres microservices ou bases de données PostgreSQL) qui ne devraient pas être accessibles directement.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Request Forgery ( SSRF )</td>
+                <td>Un attaquant cible les endpoints de métadonnées cloud (ex: 169.254.169.254 dans Azure) pour voler des identifiants d&#39;instance ou des clés d&#39;API du serveur LLM.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Request Forgery ( SSRF )</td>
+                <td>Un attaquant force le serveur à appeler des services locaux (localhost) ou d&#39;autres ressources sur le réseau privé interne, permettant une reconnaissance ou une exploitation.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Template Injection</td>
+                <td>Un attaquant injecte une expression dans un champ de saisie qui est ensuite interprétée par le moteur de template côté serveur pour exécuter du code arbitraire.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Template Injection</td>
+                <td>Un attaquant exploite le moteur de template pour accéder à des variables internes ou des objets exposés dans le contexte du template (ex: configuration de l&#39;application, secrets).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Server-Side Template Injection</td>
+                <td>Un attaquant injecte du code pour modifier le contenu généré par le template (ex: pages web, documents PDF) afin d&#39;afficher des informations falsifiées ou d&#39;exfiltrer des données.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Session Fixation</td>
+                <td>Un attaquant impose un ID de session prédéfini à la victime (via URL, cookie malveillant), puis attend qu’elle se connecte à l&#39;assistant RH avec cet ID.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Session Fixation</td>
+                <td>Un attaquant envoie un lien contenant un ID de session prédéfini à la victime, et après sa connexion, l&#39;attaquant réutilise cet ID pour usurper sa session.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Session Fixation</td>
+                <td>Un attaquant exploite une mauvaise gestion des sessions pour associer un ID de session qu&#39;il contrôle à une session authentifiée d&#39;un utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">User Impersonation</td>
+                <td>L’attaquant obtient les identifiants ou facteurs d’authentification d’un utilisateur légitime (par phishing, vol de credentials) et se connecte à l&#39;assistant RH sous cette identité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">User Impersonation</td>
+                <td>L’attaquant récupère un cookie de session, un jeton de session ou un snapshot de contexte associé à une session déjà authentifiée, puis le réutilise pour reprendre l’interaction avec l&#39;assistant RH sous l’identité de l’utilisateur légitime.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">User Impersonation</td>
+                <td>L’attaquant injecte dans le contexte du chatbot (prompt, mémoire) une assertion d’identité, de rôle ou d’autorité utilisateur, puis amène l’assistant RH à traiter cette déclaration comme une preuve valide sans vérification indépendante.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Authentication</td>
+                <td>L’attaquant cible les endpoints d’authentification, de réinitialisation de mot de passe et de vérification MFA de l’API REST, puis soumet massivement des combinaisons pour trouver une valeur valide et compromettre l’authentification.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Authentication</td>
+                <td>L’attaquant s’appuie sur des mots de passe, secrets de signature ou valeurs d’authentification faibles, réutilisés ou faciles à deviner pour accéder à des comptes.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Authentication</td>
+                <td>L’attaquant récupère un jeton d’authentification (ex: JWT), en modifie le contenu ou les éléments de signature, puis le rejoue auprès de l’API afin de faire accepter un jeton forgé ou altéré.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Level Authorization</td>
+                <td>L&#39;attaquant intercepte une requête API REST valide vers une ressource qui lui est accessible, puis remplace l&#39;identifiant de l&#39;objet ciblé (ex: un document RH) par d&#39;autres valeurs plausibles ou séquentielles pour accéder à des objets d&#39;autrui.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Level Authorization</td>
+                <td>L&#39;attaquant formule des requêtes vers un microservice de données en substituant des références d&#39;objets appartenant à un domaine métier différent du sien, et le microservice y répond sans contrôle d&#39;autorisation inter-domaine.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Level Authorization</td>
+                <td>Un attaquant accède à des ressources administratives ou des configurations de l&#39;application en modifiant un identifiant d&#39;objet, sans que le système ne vérifie ses privilèges réels.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Property Level Authorization</td>
+                <td>L&#39;attaquant observe les réponses API d&#39;opérations légitimes et constate que des propriétés sensibles d&#39;objet (ex: statut interne d&#39;un document) sont retournées sans être nécessaires à la fonction demandée, exposant des données par inadvertance.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Property Level Authorization</td>
+                <td>L&#39;attaquant observe le schéma des objets retournés par l&#39;API, en déduit les propriétés internes de l&#39;entité côté serveur, puis les soumet dans le body d&#39;une requête de modification (mass assignment), altérant des propriétés non destinées à être modifiables par lui.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Broken Object Property Level Authorization</td>
+                <td>Un attaquant accède à des informations confidentielles en modifiant simplement le nom d&#39;une propriété dans une requête API, sans aucune vérification d&#39;autorisation.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Buffer Manipulation</td>
+                <td>Un attaquant dépasse la taille du buffer d&#39;une entrée (ex: un long prompt pour le chatbot, un document RAG volumineux) pour écraser l’adresse de retour et injecter du code malveillant sur le backend Spring Boot.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Buffer Manipulation</td>
+                <td>Un attaquant exploite un buffer pour lire des zones mémoire non autorisées, potentiellement pour extraire des secrets ou des données sensibles.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Buffer Manipulation</td>
+                <td>Un attaquant envoie des données malformées spécifiquement conçues pour provoquer un crash de l’application ou d&#39;un microservice, entraînant une indisponibilité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">deserialization injection</td>
+                <td>Un attaquant modifie un objet sérialisé (ex: contenu d&#39;un cookie, paramètre d&#39;API) pour injecter du code exécuté lors de la désérialisation par le backend Spring Boot.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">deserialization injection</td>
+                <td>Un attaquant modifie les valeurs d’un objet désérialisé pour obtenir des privilèges administratifs ou modifier des configurations critiques de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">deserialization injection</td>
+                <td>Un attaquant envoie des objets sérialisés volumineux ou complexes pour épuiser les ressources du serveur lors de la désérialisation, provoquant un déni de service.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">File Inclusion</td>
+                <td>Un attaquant manipule un paramètre de l&#39;application pour inclure un fichier du système (ex: /etc/passwd, fichier de log) et extraire les informations sensibles qu&#39;il contient.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">File Inclusion</td>
+                <td>Un attaquant combine une faille LFI (Local File Inclusion) avec d’autres techniques (ex: injection de données dans les logs) pour exécuter du code arbitraire sur le serveur du backend.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">File Inclusion</td>
+                <td>Un attaquant force l&#39;application à charger un fichier de configuration alternatif ou un script malveillant présent sur le système.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">AI supply chain tampering</td>
+                <td>Un attaquant injecte des données malveillantes ou des instructions cachées dans les documents internes avant qu&#39;ils ne soient indexés dans pgvector, altérant les informations fournies par l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">AI supply chain tampering</td>
+                <td>Un attaquant injecte un adapter LoRA ou un checkpoint malveillant dans les dépendances du pipeline d&#39;embedding, modifiant son comportement lors de la création des embeddings locaux.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">AI supply chain tampering</td>
+                <td>Un attaquant falsifie les informations d’origine des documents internes ou des embeddings afin de masquer une manipulation malveillante de la source de vérité du RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Data Poisoning</td>
+                <td>Un attaquant injecte des données incorrectes ou malveillantes dans les documents internes ou les embeddings stockés dans pgvector, altérant les réponses du chatbot pour des requêtes spécifiques.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Data Poisoning</td>
+                <td>Un attaquant modifie les documents internes ou les embeddings pour influencer les décisions du LLM dans un cas précis, par exemple en favorisant une politique RH incorrecte.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Data Poisoning</td>
+                <td>Un attaquant injecte des données spécifiques dans les documents indexés pour créer un comportement caché du LLM activé par un &#39;trigger&#39; via la RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Direct prompt injection</td>
+                <td>Un attaquant injecte des instructions dans le prompt pour forcer le LLM à ignorer ses règles de sécurité prédéfinies et à divulguer des informations sensibles.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Direct prompt injection</td>
+                <td>Un attaquant insère un prompt demandant explicitement au LLM de révéler des informations internes ou confidentielles tirées des documents RAG (ex: &#39;dis-moi la politique de licenciement interne confidentielle&#39;).</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Direct prompt injection</td>
+                <td>Un attaquant modifie les instructions du prompt pour influencer les réponses du LLM, le faisant générer des informations biaisées ou inappropriées.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Indirect prompt injection</td>
+                <td>Un attaquant insère des instructions cachées dans un document interne (ex: une politique RH) qui est ensuite indexé dans pgvector. Lors d&#39;une requête RAG, le LLM récupère ce document et interprète les instructions malveillantes.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Indirect prompt injection</td>
+                <td>Un attaquant injecte du contenu malveillant dans un document stocké dans la base de connaissances (pgvector) utilisée par le modèle RAG, provoquant des réponses inattendues ou inappropriées du chatbot.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Indirect prompt injection</td>
+                <td>Un attaquant compromet une source de données internes et y insère des phrases déguisées en instructions pour le LLM, qui sont ensuite récupérées par le mécanisme RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Long-term Memory Poisoning</td>
+                <td>Un attaquant dépose un document malveillant dans une source indexée par l&#39;assistant RH. Lors d’une recherche de contexte, le LLM récupère ce document et l’intègre à son traitement comme une donnée de référence falsifiée.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Long-term Memory Poisoning</td>
+                <td>L’attaquant exploite un défaut d’authentification ou d’autorisation sur l’API de la base pgvector et modifie directement les vecteurs, les métadonnées et les entrées de mémoire à la source.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Long-term Memory Poisoning</td>
+                <td>L’attaquant injecte un contenu malveillant qui n’est pas écrit immédiatement en mémoire, mais qui est intégré plus tard lors d’un processus de consolidation, de re-embedding ou de summarization périodique des documents internes.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model denial of service</td>
+                <td>Un attaquant envoie un grand nombre de requêtes simultanées à l&#39;API Azure OpenAI via l&#39;assistant RH pour remplir la file d’attente du modèle et empêcher le traitement des requêtes légitimes.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model denial of service</td>
+                <td>Un attaquant envoie des entrées (prompts ou documents RAG) dépassant la taille maximale du contexte pour provoquer des erreurs ou une dégradation du traitement par le LLM ou le pipeline RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model denial of service</td>
+                <td>Un attaquant soumet des entrées spécialement conçues pour maximiser le temps de calcul du LLM externe ou des processus de recherche/embedding dans pgvector, épuisant les ressources et augmentant les coûts.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">ML model evasion</td>
+                <td>Un attaquant fournit des données (prompts) en dehors du domaine d’entraînement ou du comportement attendu du LLM pour provoquer des erreurs de classification ou contourner les filtres de sécurité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">ML model evasion</td>
+                <td>Un attaquant manipule une entrée du chatbot pour qu’elle soit classée comme une catégorie spécifique choisie, afin d&#39;obtenir une réponse ou une action spécifique et non autorisée du LLM.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">ML model evasion</td>
+                <td>Un attaquant exploite les scores ou réponses du LLM pour affiner ses entrées (prompts) et améliorer l’évasion des mécanismes de détection de sécurité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model stealing</td>
+                <td>Un attaquant envoie un grand nombre de requêtes à l&#39;API Azure OpenAI pour apprendre progressivement le comportement du LLM et reconstruire un modèle similaire.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model stealing</td>
+                <td>Un attaquant analyse les réponses du LLM pour déduire ses hyperparamètres internes ou son architecture.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model stealing</td>
+                <td>Un attaquant accède directement à la base de données pgvector pour copier les embeddings des documents internes, volant ainsi la &#39;connaissance&#39; de l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model Tampering</td>
+                <td>Un attaquant modifie directement les embeddings du modèle ou les documents sources stockés dans pgvector pour altérer le comportement du RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model Tampering</td>
+                <td>Un attaquant injecte une modification dans les documents internes indexés pour que l&#39;assistant RH réagisse de manière spécifique à un trigger caché via la RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Model Tampering</td>
+                <td>Un attaquant exploite une faille pour forcer le retour vers une ancienne version vulnérable des embeddings ou des documents sources, réintroduisant un biais ou une vulnérabilité.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Short-term Memory Poisoning</td>
+                <td>L&#39;attaquant injecte du contenu malveillant dans les segments de la mémoire de travail du chatbot, comme le &#39;scratchpad&#39; ou les résultats temporaires de recherche RAG.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Short-term Memory Poisoning</td>
+                <td>L&#39;attaquant insère des instructions persistantes ou des faits falsifiés dans une conversation longue pour forcer leur inclusion lors de la phase de résumé (compression) du contexte du chatbot.</td>
+              </tr>
+              
+              <tr>
+                <td class="name-cell">Short-term Memory Poisoning</td>
+                <td>Un attaquant manipule les entrées successives du chatbot pour progressivement introduire un biais dans sa compréhension du contexte et de l&#39;intention de l&#39;utilisateur.</td>
+              </tr>
+              
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2 class="section-title">Mitigations</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Mitigation à appliquer</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser exclusivement des requêtes préparées (Prepared Statements) pour toutes les interactions entre le backend Spring Boot et la base de données PostgreSQL.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement toutes les entrées utilisateur côté serveur (type, format, taille et contenu) avant de les utiliser dans des requêtes SQL.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Restreindre les privilèges des comptes de base de données PostgreSQL au strict nécessaire pour chaque microservice selon le principe du moindre privilège.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les données sensibles au repos dans la base de données PostgreSQL pour protéger les documents internes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Masquer les messages d&#39;erreur SQL détaillés côté utilisateur afin de ne pas révéler d&#39;informations sur la structure de la base de données ou l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une solution de Database Firewall pour analyser et bloquer les requêtes SQL malveillantes avant exécution sur PostgreSQL.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais exposer la base de données PostgreSQL directement sur Internet; la placer dans un réseau privé et restreindre l&#39;accès via des règles de pare-feu strictes aux seuls serveurs backend autorisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser tous les événements de sécurité liés à la base de données PostgreSQL (tentatives d&#39;injection, requêtes suspectes) et centraliser les logs.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un rate limiting strict sur les endpoints d’authentification (par IP, compte et device) pour limiter le nombre de tentatives.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Bloquer temporairement le compte après un nombre défini d’échecs d&#39;authentification pour empêcher les attaques par force brute ciblées.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Imposer une authentification multifacteur (MFA) obligatoire pour tous les comptes d&#39;utilisateurs de l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un CAPTCHA adaptatif après détection de comportement suspect lors des tentatives de connexion.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Générer les identifiants de session avec un générateur cryptographique sécurisé (CSPRNG) et garantir une entropie élevée (≥ 128 bits).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser toutes les tentatives d’authentification (succès/échec) et corréler les événements dans un SIEM pour détecter les activités suspectes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer un WAF avec protection anti-bot avancée pour identifier et bloquer les tentatives automatisées.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais construire des commandes système via concaténation de chaînes avec des entrées utilisateur; utiliser des bibliothèques natives ou des fonctions sécurisées d&#39;exécution de processus.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement toutes les entrées utilisateur (allowlist) avant de les passer à toute fonction d&#39;exécution de commande.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer le principe du moindre privilège pour les processus exécutant des commandes système et s&#39;assurer que les services tournent avec des comptes non privilégiés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Isoler les environnements d’exécution de l&#39;application (conteneurs, chroot) pour limiter l&#39;impact d&#39;une exécution de commande malveillante.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les données sensibles au repos et en transit et éviter toute exposition de chemins système ou variables d’environnement dans les messages d&#39;erreur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser toutes les commandes exécutées par l’application et intégrer ces logs dans un SIEM pour détection d&#39;anomalies.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter des CSRF tokens cryptographiquement forts, uniques par requête (one-time token), à inclure dans toutes les requêtes de modification d&#39;état.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des cookies de session avec l&#39;attribut SameSite=Strict par défaut pour prévenir l&#39;envoi de cookies dans des requêtes cross-site.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier l&#39;en-tête Referer et l&#39;en-tête Origin des requêtes HTTP pour s&#39;assurer qu&#39;elles proviennent du domaine attendu de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Exiger une re-authentification forte (step-up authentication) pour toute action critique ou sensible (ex: modification de données RH importantes).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une API Gateway avec validation des requêtes (headers, origine, schéma) pour bloquer les requêtes forgées.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un mécanisme d’échappement systématique de toutes les données en sortie affichées dans l&#39;interface utilisateur React, en fonction du contexte HTML, JavaScript ou URL.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider et filtrer strictement toutes les entrées utilisateur côté serveur (backend Spring Boot) et côté client (frontend React) pour supprimer les caractères spéciaux ou le code potentiellement malveillant.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une politique de sécurité de contenu (CSP) stricte pour restreindre les sources de scripts, images et autres ressources, empêchant l’exécution de scripts non autorisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer un WAF avec des règles de détection et de blocage des attaques XSS.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Activer les attributs de sécurité des cookies (HttpOnly, Secure, SameSite) pour empêcher l&#39;accès aux cookies de session via JavaScript et leur transmission sur des canaux non sécurisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une validation stricte des chemins de fichiers basée sur une liste blanche (allowlist) de répertoires et de noms de fichiers autorisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Stocker les fichiers sensibles, y compris les documents internes, en dehors du répertoire web ou des répertoires accessibles par le backend et les servir via un mécanisme contrôlé.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer le principe du moindre privilège sur les accès fichiers, en restreignant les droits d’accès du service applicatif aux seuls fichiers nécessaires.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des identifiants indirects (UUID) au lieu de chemins de fichiers directs dans les requêtes des utilisateurs.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser toutes les tentatives d’accès aux fichiers et surveiller les accès aux fichiers critiques.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer une protection anti-DDoS en amont du réseau pour absorber le trafic malveillant avant qu&#39;il n&#39;atteigne l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un rate limiting strict par IP, endpoint et utilisateur sur l&#39;API REST du backend et les interactions avec le chatbot.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer un WAF avec protection anti-DDoS applicatif pour filtrer les requêtes malveillantes au niveau de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser l&#39;auto-scaling dynamique pour adapter les ressources du backend en fonction de la charge, mais avec des limites pour éviter une explosion des coûts en cas d&#39;attaque.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place un load balancing distribué pour répartir le trafic sur plusieurs instances de services.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement toutes les entrées (type, format, taille) à chaque point d&#39;entrée de l&#39;application (frontend, backend, chatbot).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter des schémas de validation (ex: JSON Schema pour les APIs REST, validation des prompts) et rejeter toute donnée non conforme.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer un WAF avec détection des payloads malformés ou anormaux.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais exposer d’informations sensibles dans les messages d’erreur de l&#39;application; fournir des messages génériques et journaliser les détails en interne.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Surveiller les logs d’erreurs applicatives (exceptions, crashs) pour détecter les tentatives de fuzzing et les comportements anormaux.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">S’assurer que le front-end (proxy, WAF, load balancer) et le back-end Spring Boot utilisent la même interprétation des en-têtes HTTP (Content-Length, Transfer-Encoding).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Rejeter toute requête mal formée ou incohérente et désactiver les comportements HTTP non standards dans les serveurs.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Nettoyer et normaliser les en-têtes HTTP avant traitement par le backend.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une validation des sessions et des tokens indépendamment du proxy frontal pour s&#39;assurer que les contrôles de sécurité ne sont pas contournés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter le nombre de connexions persistantes (keep-alive) et appliquer des timeouts stricts sur les connexions.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier systématiquement les autorisations côté serveur pour chaque requête accédant à une ressource, en s&#39;assurant que l&#39;utilisateur est bien le propriétaire ou a les droits d&#39;accès.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais faire confiance aux identifiants fournis par le client; les mapper à l&#39;identité authentifiée de l&#39;utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des identifiants non prévisibles comme des UUID v4 pour les ressources, afin d&#39;empêcher l&#39;énumération.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un contrôle d&#39;accès basé sur les rôles (RBAC) ou les attributs (ABAC) pour limiter chaque utilisateur aux actions et ressources autorisées selon son rôle.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser tous les accès aux ressources sensibles et corréler les événements vers le SIEM pour détecter les tentatives d&#39;exploitation IDOR.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Classifier les données sensibles manipulées par l&#39;assistant RH et masquer ou tronquer ces données dans les interfaces et les journaux en production.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Désactiver les messages d’erreur détaillés en production; n&#39;afficher que des messages génériques et logguer les détails en interne.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Supprimer les fichiers de debug, les logs de développement et les backups accessibles publiquement sur les environnements de production.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Sécuriser les fichiers de configuration et les secrets applicatifs (clés API Azure OpenAI, identifiants de base de données) en les stockant dans un coffre-fort de secrets sécurisé (Vault).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Durcir les serveurs web et applicatifs selon des benchmarks de sécurité (CIS Benchmark) et désactiver les bannières techniques et les en-têtes verbeux.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer toutes les communications inter-microservices gRPC avec mTLS (mutual TLS) pour garantir la confidentialité et l&#39;intégrité des messages.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Authentifier mutuellement les workloads des microservices pour s&#39;assurer que seuls les services autorisés peuvent communiquer entre eux.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement la structure des messages gRPC avec un schéma formel (Protobuf) avant traitement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place des mécanismes anti-replay et de contrôle de séquencement des messages via nonce, horodatage et numérotation de séquence pour empêcher les rejeux ou les exécutions hors séquence.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer des contrôles d’accès (RBAC/ABAC) sur les flux inter-microservices pour limiter chaque microservice aux types de messages et actions autorisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier systématiquement la signature cryptographique de chaque JWT avant toute utilisation de son contenu.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Refuser tout token avec l&#39;algorithme &#39;alg:none&#39; et restreindre les algorithmes autorisés à une liste blanche stricte (ex: RS256, ES256).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Stocker les clés de signature JWT de manière sécurisée (Vault, KMS) et ne jamais les hardcoder dans le code de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des tokens à courte durée de vie (expiration courte) et des refresh tokens sécurisés gérés côté serveur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier les rôles et permissions côté backend, après validation du JWT, et ne jamais faire confiance uniquement aux claims du token pour les décisions d&#39;autorisation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Forcer l’utilisation de HTTPS (TLS 1.3 minimum) pour toutes les communications entre le frontend et le backend.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter mTLS (mutual TLS) pour toutes les communications gRPC entre microservices afin d&#39;authentifier mutuellement chaque partie.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement les certificats côté client et serveur pour s&#39;assurer de l&#39;identité des interlocuteurs et éviter les faux certificats.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place HSTS (HTTP Strict Transport Security) pour empêcher les rétrogradations vers HTTP non chiffré.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des suites cryptographiques robustes et désactiver les protocoles faibles (SSL, TLS 1.0, TLS 1.1) et les suites de chiffrement obsolètes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Restreindre strictement les &#39;redirect_uri&#39; à une liste blanche prédéfinie et refuser toute URL dynamique ou non enregistrée.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser uniquement HTTPS pour tous les endpoints OAuth afin de garantir le chiffrement des tokens en transit.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais exposer les tokens d&#39;accès dans l’URL (query string) et les gérer via des mécanismes sécurisés (ex: HttpOnly cookies ou stockage côté serveur).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des tokens courts (short-lived access tokens) et des refresh tokens sécurisés côté serveur uniquement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter le paramètre &#39;state&#39; dans les requêtes OAuth pour prévenir les attaques CSRF.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Générer des tokens de réinitialisation longs, aléatoires et imprévisibles, et les associer à un utilisateur unique côté serveur avec une courte durée de validité.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un flux de réinitialisation strict avec des étapes obligatoires et empêcher le contournement de ces étapes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais exposer les tokens de réinitialisation dans les réponses API ou les logs de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Exiger une vérification supplémentaire (MFA) pour les réinitialisations de mot de passe des comptes sensibles.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Notifier l’utilisateur par un canal secondaire (ex: e-mail) lors d’une demande de réinitialisation et après un changement de mot de passe réussi.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un rate limiting sur les demandes de réinitialisation de mot de passe par utilisateur et par adresse IP.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des transactions atomiques pour toutes les opérations critiques sur les données de l&#39;assistant RH, en garantissant l&#39;intégrité (ACID).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter des mécanismes de verrouillage (optimistic locking ou verrous distribués si nécessaire) sur les ressources sensibles pour empêcher les modifications concurrentes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Centraliser les opérations sensibles dans un service unique ou utiliser des files de traitement (queues) pour sérialiser les opérations critiques et éviter les traitements parallèles non maîtrisés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter des mécanismes anti-replay pour les requêtes critiques, garantissant qu&#39;une action n&#39;est exécutée qu&#39;une seule fois.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser toutes les opérations critiques de création et de modification pour avoir une traçabilité en cas d&#39;incident.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une liste blanche (allowlist) stricte des URLs et des domaines autorisés pour les requêtes sortantes initiées par le backend.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Bloquer tout trafic sortant non nécessaire vers Internet (egress deny) et implémenter un pare-feu interne pour bloquer les appels vers le localhost et le réseau interne critique.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais permettre à l’utilisateur de contrôler directement une URL ou un nom de domaine dans les entrées de l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Segmenter le réseau entre l&#39;application, les bases de données et les services internes pour limiter la portée d&#39;une attaque SSRF.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer le principe du moindre privilège sur les rôles IAM attachés aux instances du backend et aux comptes de service, et utiliser des credentials temporaires.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Séparer strictement les données utilisateur de la logique de template; ne jamais construire des templates dynamiquement avec des entrées utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des templates statiques prédéfinis et passer les données utilisateur uniquement comme variables du template, en échappant ou neutralisant les caractères spéciaux du moteur de template.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement toutes les entrées utilisateur avant de les utiliser dans des templates côté serveur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Activer le mode sandbox du moteur de template si disponible, pour limiter l’accès aux fonctions dangereuses du système d&#39;exploitation ou du système de fichiers.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Exécuter l&#39;application avec des privilèges minimaux et empêcher l’accès aux variables d’environnement sensibles depuis le contexte du template.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Régénérer obligatoirement l&#39;identifiant de session après chaque authentification réussie de l&#39;utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser exclusivement HTTPS pour toutes les communications afin de protéger les cookies de session en transit.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Stocker les identifiants de session uniquement dans des cookies sécurisés avec les flags HttpOnly, Secure et SameSite=Strict.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Invalider immédiatement la session en cas de déconnexion, de changement de mot de passe ou de détection d&#39;une anomalie.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter la durée maximale de validité des sessions pour réduire la fenêtre d&#39;opportunité d&#39;une attaque de fixation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Imposer une authentification multifacteur (MFA) robuste et résistante au phishing (ex: FIDO2 / WebAuthn) pour tous les employés accédant à l&#39;assistant RH.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Exiger une authentification renforcée (step-up authentication) avant toute action sensible ou consultation de données RH critiques.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais dériver l’identité de l’utilisateur depuis le prompt du chatbot, la mémoire de conversation, le contenu RAG ou un output d’outil; toujours résoudre l’identité depuis un jeton/session signé(e) par l’IdP.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des cookies HttpOnly + Secure + SameSite=Strict et des sessions courtes avec régénération de l&#39;ID après login.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter l&#39;Authorization Code + PKCE (Proof Key for Code Exchange) si OAuth/OIDC est utilisé pour les flux d&#39;authentification.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer un rate limiting par compte, IP, session et endpoint d’authentification.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déclencher un account lockout temporaire ou un step-up MFA après N échecs d&#39;authentification.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Imposer une authentification multifacteur (MFA) robuste sur les flux de login, reset et recovery.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Générer tous les tokens et session IDs avec un CSPRNG et exiger une entropie suffisante pour tous les artefacts d’authentification.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier systématiquement la signature cryptographique avant toute acceptation d&#39;un token JWT et valider l’algorithme côté serveur via une liste blanche stricte.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier côté serveur que l&#39;identifiant de ressource appartient bien à l&#39;utilisateur authentifié du jeton JWT, à chaque appel de l&#39;API REST.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Générer les identifiants de ressources en UUID v4 aléatoires pour empêcher l&#39;énumération prévisible des objets.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter des contrôles d’accès par rôles (RBAC) ou par attributs (ABAC) pour limiter chaque utilisateur aux actions autorisées selon son rôle sur les objets.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Isoler les microservices par domaine de données pour qu&#39;un service n&#39;expose que ses propres ressources et appliquer une segmentation réseau L3 entre microservices.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ajouter à l’API Gateway des contrôles de cohérence sur les identifiants d’objet et le contexte d’appel, sans remplacer l’autorisation objet côté service.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Définir des DTOs (Data Transfer Objects) distincts par endpoint de l&#39;API REST, exposant uniquement les propriétés strictement nécessaires dans chaque réponse.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider le payload entrant contre un schéma JSON strict avec `additionalProperties: false` pour refuser toute propriété non autorisée dans les requêtes de modification.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Restreindre la modification aux seules propriétés explicitement autorisées pour le rôle de l&#39;appelant via des contrôles d&#39;autorisation granulaires.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mapper explicitement les champs autorisés vers le modèle métier et désactiver tout binding automatique non maîtrisé par le framework Spring Boot.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Auditer les réponses API avec un outil de &#39;diff&#39; à chaque déploiement pour détecter les propriétés exposées par inadvertance.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement la taille et le format de toutes les entrées utilisateur (input length validation) et des données traitées, en implémentant des limites de buffer explicites.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser des langages et des frameworks qui offrent des protections contre les manipulations de buffer (comme Java avec Spring Boot) et des fonctions sécurisées pour la manipulation de la mémoire.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ne jamais exposer les erreurs mémoire ou les dumps au client; journaliser ces informations en interne et protéger les logs.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Exécuter les services de l&#39;application avec des comptes non privilégiés et appliquer le principe du moindre privilège sur les processus.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Activer les protections système au niveau de l&#39;OS (DEP/NX pour la prévention d&#39;exécution de données, ASLR pour la randomisation de l&#39;espace d&#39;adressage).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Éviter l’utilisation de mécanismes de désérialisation natifs non sécurisés (comme la sérialisation Java standard) pour les données non fiables provenant du client.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider et nettoyer les données sérialisées provenant du client, et implémenter une allowlist stricte des classes autorisées à la désérialisation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Désactiver les fonctionnalités dangereuses de désérialisation (auto-type, polymorphisme dynamique, résolution automatique de classes) et configurer les frameworks pour utiliser des modes stricts.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Signer toutes les données sérialisées (HMAC ou signature numérique) pour vérifier leur intégrité avant toute désérialisation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Isoler les composants traitant des données sérialisées dans des environnements sécurisés et appliquer le principe du moindre privilège à ces services.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une allowlist stricte des fichiers autorisés à l’inclusion, et utiliser un mapping interne au lieu d’un chemin fourni par l’utilisateur.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Interdire toute inclusion de fichiers distants et centraliser les fichiers inclus dans un répertoire dédié et contrôlé.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement tous les paramètres liés aux fichiers et empêcher l’accès aux fichiers sensibles (config, logs, clés, système).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Stocker les fichiers sensibles hors des répertoires accessibles par le serveur web ou l&#39;application.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer le principe du moindre privilège sur les fichiers et restreindre les droits d’accès du service applicatif aux seuls fichiers nécessaires.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser les accès aux fichiers et surveiller l’intégrité des fichiers critiques.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Restreindre l’accès réseau aux registres de packages, artefacts et aux dépôts de documents internes aux services internes autorisés uniquement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un IAM centralisé avec le principe du moindre privilège pour l’accès aux dépôts de code, registres d’artefacts, datasets (documents internes) et pipelines RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Vérifier l’intégrité cryptographique (hachage SHA-256) des documents internes et des embeddings locaux avant leur utilisation ou déploiement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Maintenir un AI Bill of Materials (AI-BOM) pour les modèles, datasets (documents internes), dépendances et adaptateurs utilisés dans le pipeline RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Scanner les dépendances directes et transitives (SCA) utilisées dans le backend et le pipeline RAG pour détecter les vulnérabilités.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un contrôle d’accès strict (IAM) basé sur le principe du moindre privilège pour l’accès aux datasets (documents internes) et aux bases de données pgvector.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer un mécanisme de hachage (SHA-256) sur les documents internes et les embeddings afin de vérifier leur intégrité avant chaque phase d’entraînement du RAG ou d&#39;utilisation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Maintenir une traçabilité complète (dataset provenance) des documents internes, incluant la source et l&#39;historique des modifications.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place des mécanismes de File Integrity Monitoring (FIM) pour détecter toute modification non autorisée des documents internes et des embeddings.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Détection automatique d’outliers ou d&#39;anomalies dans les datasets de documents internes pour identifier des tentatives d&#39;empoisonnement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les datasets d’entraînement (documents internes) et les embeddings au repos dans pgvector (AES-256).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Stocker le &#39;system prompt&#39; uniquement côté backend et empêcher toute modification ou divulgation de celui-ci par les utilisateurs ou le LLM lui-même.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Séparer clairement les instructions système (garde-fous) et les données utilisateur dans le prompt envoyé au LLM, en appliquant une hiérarchie stricte.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une LLM Security Gateway ou AI Firewall pour inspecter et filtrer tous les prompts avant envoi au modèle LLM externe, bloquant les tentatives d&#39;injection.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter la longueur maximale des prompts utilisateur et supprimer ou neutraliser les balises HTML, Markdown et caractères spéciaux qui pourraient être interprétés comme des instructions.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer des &#39;guardrails&#39; pour contrôler les réponses du modèle et empêcher la divulgation d&#39;informations sensibles ou de secrets.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider et filtrer toutes les données externes (documents internes) avant leur ingestion et indexation dans pgvector.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Nettoyer les documents en supprimant les scripts, le HTML actif et le contenu dynamique avant l&#39;embedding et l&#39;indexation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un pipeline de sanitization robuste avant l&#39;indexation dans pgvector pour détecter et neutraliser les instructions cachées ou le contenu malveillant.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place un contrôle d’accès strict pour l’ingestion et la modification des documents internes utilisés par la RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser une architecture multi-LLM ou un modèle secondaire (&#39;LLM-as-a-judge&#39;) pour analyser les entrées RAG et les réponses du modèle, et détecter les tentatives d&#39;injection.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter une authentification et autorisation forte (AuthN/AuthZ) sur chaque opération de lecture/écriture dans la base de données pgvector.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider l&#39;intégrité de la mémoire à long terme (embeddings) à l&#39;aide de lignes de base cryptographiques (hachage SHA-256) et surveiller les sorties dérivées du retrieval pour détecter un chunk empoisonné.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Sanitiser le contenu des documents avant indexation et avant injection dans le contexte du LLM: suppression de patterns d’injection, filtrage de markup suspect.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">N’autoriser l’ingestion des documents internes dans pgvector que depuis des sources approuvées et avec une provenance vérifiée (historique, métadonnées, confiance de la source).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les embeddings stockés dans pgvector au repos et en transit, surtout s&#39;ils contiennent des données sensibles.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Versionner les documents sources, les embeddings et les transformations pour permettre la comparaison, la détection de dérive et le rollback en cas de corruption.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer une API Gateway pour appliquer des quotas, du throttling et un rejet précoce des requêtes excessives ou coûteuses vers l&#39;API Azure OpenAI et les services RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter la taille maximale des prompts et des documents utilisés pour la RAG et rejeter les requêtes dépassant la fenêtre de contexte autorisée.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Définir des timeouts stricts pour les requêtes d&#39;inférence au LLM et les appels aux composants RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un autoscaling borné des workers d’inférence du backend de l&#39;assistant RH et des processus RAG.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser le nombre de requêtes, la latence, les erreurs et la taille des prompts pour détecter les hausses anormales de consommation ou les patterns d’abus.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un mode dégradé en cas de surcharge, comme la réduction du contexte RAG ou le retour à des réponses pré-générées pour les requêtes non critiques.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Valider strictement chaque entrée (prompt) avant inférence, en n’acceptant que les formats d’entrée attendus et en rejetant les requêtes mal formées ou incohérentes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Détecter les entrées hors distribution attendue ou les anomalies sur les requêtes d’inférence avant soumission au modèle LLM externe.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un AI Firewall ou une LLM Security Gateway pour inspecter les requêtes d’inférence et filtrer les entrées malveillantes.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter les informations retournées par l’API du LLM au strict nécessaire et ne pas exposer les scores, probabilités ou détails inutiles de sortie qui pourraient aider à l&#39;évasion.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place une seconde validation ou un seuil de confiance pour les décisions critiques du LLM, avec une intervention humaine si nécessaire.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Déployer les services d’inférence du backend derrière une API Gateway sécurisée qui applique un throttling adaptatif pour détecter les requêtes automatisées ou excessives.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Restreindre l’accès réseau aux registres de modèles (si applicables) et aux bases de données pgvector aux services internes autorisés uniquement.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Limiter les informations retournées par les APIs d’inférence du LLM au strict nécessaire, en réduisant la granularité des scores de prédiction exposés.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les embeddings locaux stockés dans pgvector au repos et en transit.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Journaliser toutes les requêtes d’inférence au LLM et les accès à pgvector, et surveiller les activités suspectes (pics de requêtes, accès inhabituels).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un IAM strict avec RBAC granulaire pour contrôler l’accès aux documents internes et aux bases de données pgvector (train, upload, update, deploy, rollback).</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer une signature numérique obligatoire sur les documents internes et les embeddings avant leur indexation/déploiement, et vérifier leur intégrité via hachage cryptographique (SHA-256) avant chaque utilisation.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Chiffrer les documents internes et les embeddings stockés dans pgvector au repos avec AES-256.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Implémenter un versioning strict des documents et des embeddings via un système de gestion de données pour permettre un rollback rapide vers une version saine en cas de compromission.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Mettre en place une validation avec double approbation pour toute modification majeure des documents internes ou des embeddings.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Séparer physiquement les buffers mémoire en zones d&#39;instructions, de travail et de données externes dans le traitement des requêtes du chatbot.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Appliquer un schéma de validation strict (JSON Schema ou validation sémantique) sur toute sortie d&#39;outil ou de composant RAG avant son intégration en mémoire de travail du chatbot.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Ré-injecter systématiquement les règles de sécurité au sommet du contexte de conversation après chaque phase de compression pour les &#39;hard-pinner&#39;.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Extraire des faits structurés (plutôt que des résumés narratifs) des interactions pour limiter la ré-interprétation malveillante des instructions par le LLM.</td>
+              </tr>
+              
+              <tr>
+                <td style="color: var(--text); font-weight: 500;">Utiliser un modèle tiers (Critique) pour valider que le résumé est sémantiquement fidèle aux logs bruts et exempt d&#39;instructions malveillantes.</td>
+              </tr>
+              
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="report-footer">
+      <table class="footer-table">
+        <tr>
+          <td class="footer-brand">Attijariwafa Bank</td>
+          <td class="footer-center">TM-20260426-154819 · v1.0</td>
+          <td class="footer-right">
+            <span class="tag">CONFIDENTIEL</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+</body>
+</html>
