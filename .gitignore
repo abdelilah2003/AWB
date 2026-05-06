@@ -1,6 +1,71 @@
-awb_pfe_project.tar 
+# =============== SECRETS — JAMAIS POUSSER ===============
+.env
+**/.env
+backend.env
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Mais GARDER les .example (templates publics)
+!.env.example
+!**/.env.example
+!backend.env.example
+
+# =============== Python ===============
+*.pyc
+*.pyo
+__pycache__/
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =============== Node ===============
+node_modules/
+dist/
+build/
+.npm/
+npm-debug.log*
+
+# =============== IDE ===============
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =============== Logs ===============
+*.log
+logs/
+
+# =============== Reports CI ===============
+reports/
+*.sarif
+
+# =============== OS ===============
+.DS_Store
+Thumbs.db
+
+# =============== Docker ===============
+docker-compose.override.yml
+
+# =============== Archives volumineuses (specifiques au projet) ===============
+*.tar
+*.tar.gz
+*.zip
+awb_pfe_project.tar
 awb-complet.tar
+
+# =============== Fichiers de travail locaux ===============
+outputs/
+files/
 myown_script.sql
-docker-compose.yml
-outputs/*
-files/*
+
+# Backups SQL avec donnees reelles
+backup.sql
+*.dump
+dump_*.sql
+*.sql.gz
