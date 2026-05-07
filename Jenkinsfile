@@ -53,27 +53,38 @@ pipeline {
 
     stages {
 
+        
+        
         stage('Init') {
-            steps {
-                sh '''
-                    set -e
-                    mkdir -p ${REPORTS_DIR}/{gitleaks,sonarqube,sca,trivy,deploy,quality,status}
+	    steps {
+		sh '''
+		    set -e
 
-                    echo "PENDING" > ${REPORTS_DIR}/status/security.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/quality.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/build.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/deploy.status
+		    mkdir -p \
+		        ${REPORTS_DIR}/gitleaks \
+		        ${REPORTS_DIR}/sonarqube \
+		        ${REPORTS_DIR}/sca \
+		        ${REPORTS_DIR}/trivy \
+		        ${REPORTS_DIR}/deploy \
+		        ${REPORTS_DIR}/quality \
+		        ${REPORTS_DIR}/status
 
-                    echo "============================================================"
-                    echo " AWB DEVSECOPS PIPELINE"
-                    echo " Build       : ${BUILD_NUMBER}"
-                    echo " Env         : ${DP_TARGET_ENV}"
-                    echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
-                    echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
-                    echo "============================================================"
-                '''
-            }
-        }
+		    echo "PENDING" > ${REPORTS_DIR}/status/security.status
+		    echo "PENDING" > ${REPORTS_DIR}/status/quality.status
+		    echo "PENDING" > ${REPORTS_DIR}/status/build.status
+		    echo "PENDING" > ${REPORTS_DIR}/status/deploy.status
+
+		    echo "============================================================"
+		    echo " AWB DEVSECOPS PIPELINE"
+		    echo " Build       : ${BUILD_NUMBER}"
+		    echo " Env         : ${DP_TARGET_ENV}"
+		    echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
+		    echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
+		    echo "============================================================"
+		'''
+	    }
+	}
+        
 
         stage('Parallel : Security + Quality') {
             parallel {
