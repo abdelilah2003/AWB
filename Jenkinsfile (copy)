@@ -46,9 +46,6 @@ pipeline {
         QUALITY_BRANCH_STATUS  = "PENDING"
         BUILD_STATUS           = "PENDING"
         DEPLOY_STATUS          = "PENDING"
-
-        DOCKER_CLIENT_TIMEOUT  = "300"
-        COMPOSE_HTTP_TIMEOUT   = "300"
     }
 
     stages {
@@ -57,12 +54,7 @@ pipeline {
             steps {
                 sh '''
                     set -e
-                    mkdir -p ${REPORTS_DIR}/{gitleaks,sonarqube,sca,trivy,deploy,quality,status}
-
-                    echo "PENDING" > ${REPORTS_DIR}/status/security.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/quality.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/build.status
-                    echo "PENDING" > ${REPORTS_DIR}/status/deploy.status
+                    mkdir -p ${REPORTS_DIR}/{gitleaks,sonarqube,sca,trivy,deploy,quality}
 
                     echo "============================================================"
                     echo " AWB DEVSECOPS PIPELINE"
@@ -184,20 +176,9 @@ except Exception:
                             }
                         }
                     }
-
                     post {
-                        success {
-                            script {
-                                env.SECURITY_BRANCH_STATUS = "PASS"
-                                writeFile file: "${env.REPORTS_DIR}/status/security.status", text: "PASS"
-                            }
-                        }
-                        failure {
-                            script {
-                                env.SECURITY_BRANCH_STATUS = "FAIL"
-                                writeFile file: "${env.REPORTS_DIR}/status/security.status", text: "FAIL"
-                            }
-                        }
+                        success { script { env.SECURITY_BRANCH_STATUS = "PASS" } }
+                        failure { script { env.SECURITY_BRANCH_STATUS = "FAIL" } }
                     }
                 }
 
@@ -251,43 +232,9 @@ except Exception:
                             }
                         }
                     }
-
                     post {
-                        success {
-                            script {
-                                env.QUALITY_BRANCH_STATUS = "PASS"
-                                writeFile file: "${env.REPORTS_DIR}/status/quality.status", text: "PASS"
-                            }
-                        }
-                        failure {
-                            script {
-                                env.QUALITY_BRANCH_STATUS = "FAIL"
-                                writeFile file: "${env.REPORTS_DIR}/status/quality.status", text: "FAIL"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Parallel Sync Check') {
-            steps {
-                script {
-                    env.SECURITY_BRANCH_STATUS = readFile("${env.REPORTS_DIR}/status/security.status").trim()
-                    env.QUALITY_BRANCH_STATUS  = readFile("${env.REPORTS_DIR}/status/quality.status").trim()
-
-                    echo "============================================================"
-                    echo " PARALLEL SYNC CHECK"
-                    echo " SECURITY = ${env.SECURITY_BRANCH_STATUS}"
-                    echo " QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
-                    echo "============================================================"
-
-                    if (env.SECURITY_BRANCH_STATUS == "PENDING") {
-                        error("Security branch still PENDING after parallel execution")
-                    }
-
-                    if (env.QUALITY_BRANCH_STATUS == "PENDING") {
-                        error("Quality branch still PENDING after parallel execution")
+                        success { script { env.QUALITY_BRANCH_STATUS = "PASS" } }
+                        failure { script { env.QUALITY_BRANCH_STATUS = "FAIL" } }
                     }
                 }
             }
@@ -338,18 +285,8 @@ except Exception:
                 }
             }
             post {
-                success {
-                    script {
-                        env.BUILD_STATUS = "PASS"
-                        writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "PASS"
-                    }
-                }
-                failure {
-                    script {
-                        env.BUILD_STATUS = "FAIL"
-                        writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "FAIL"
-                    }
-                }
+                success { script { env.BUILD_STATUS = "PASS" } }
+                failure { script { env.BUILD_STATUS = "FAIL" } }
             }
         }
 
@@ -386,42 +323,46 @@ print(total)
                 '''
             }
         }
-
+        
+        
+        
         stage('Push Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                  usernameVariable: 'DH_USER',
-                                                  passwordVariable: 'DH_PASS')]) {
-                    sh '''
-                        set -e
-                        echo "[*] === Push DockerHub ==="
+	    steps {
+		withCredentials([usernamePassword(
+		    credentialsId: 'dockerhub-creds',
+		    usernameVariable: 'DH_USER',
+		    passwordVariable: 'DH_PASS'
+		)]) {
+		    sh '''
+		        set -e
+		        echo "[*] === Push DockerHub ==="
 
-                        docker logout || true
-                        echo "${DH_PASS}" | docker login -u "${DH_USER}" --password-stdin
+		        docker logout || true
+		        echo "${DH_PASS}" | docker login -u "${DH_USER}" --password-stdin
 
-                        push_with_retry () {
-                            IMAGE=$1
-                            for i in 1 2 3 4 5; do
-                                echo "Attempt $i → $IMAGE"
-                                docker push $IMAGE && return 0
-                                echo "Push failed for $IMAGE. Retrying in 20s..."
-                                sleep 20
-                            done
+		        push_with_retry () {
+		            IMAGE=$1
+		            for i in 1 2 3 4 5; do
+		                echo "Attempt $i → $IMAGE"
+		                docker push $IMAGE && return 0
+		                echo "Push failed, retrying in 20s..."
+		                sleep 20
+		            done
+		            echo "Push FAILED after retries: $IMAGE"
+		            exit 1
+		        }
 
-                            echo "Push FAILED after retries: $IMAGE"
-                            exit 1
-                        }
+		        push_with_retry ${BACKEND_IMAGE}:${BUILD_TAG}
+		        push_with_retry ${BACKEND_IMAGE}:latest
+		        push_with_retry ${FRONTEND_IMAGE}:${BUILD_TAG}
+		        push_with_retry ${FRONTEND_IMAGE}:latest
 
-                        push_with_retry ${BACKEND_IMAGE}:${BUILD_TAG}
-                        push_with_retry ${BACKEND_IMAGE}:latest
-                        push_with_retry ${FRONTEND_IMAGE}:${BUILD_TAG}
-                        push_with_retry ${FRONTEND_IMAGE}:latest
-
-                        docker logout
-                    '''
-                }
-            }
-        }
+		        docker logout
+		    '''
+		}
+	    }
+	}
+        
 
         stage('Deploy → VM Desktop') {
             when { expression { return params.SKIP_DEPLOY == false } }
@@ -466,18 +407,8 @@ print(total)
                 }
             }
             post {
-                success {
-                    script {
-                        env.DEPLOY_STATUS = "PASS"
-                        writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "PASS"
-                    }
-                }
-                failure {
-                    script {
-                        env.DEPLOY_STATUS = "FAIL"
-                        writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "FAIL"
-                    }
-                }
+                success { script { env.DEPLOY_STATUS = "PASS" } }
+                failure { script { env.DEPLOY_STATUS = "FAIL" } }
             }
         }
 
@@ -499,13 +430,6 @@ print(total)
 
         stage('Consolidation') {
             steps {
-                script {
-                    env.SECURITY_BRANCH_STATUS = readFile("${env.REPORTS_DIR}/status/security.status").trim()
-                    env.QUALITY_BRANCH_STATUS  = readFile("${env.REPORTS_DIR}/status/quality.status").trim()
-                    env.BUILD_STATUS           = readFile("${env.REPORTS_DIR}/status/build.status").trim()
-                    env.DEPLOY_STATUS          = readFile("${env.REPORTS_DIR}/status/deploy.status").trim()
-                }
-
                 sh '''
                     ${VENV}/bin/python ${APP_PIPELINE}/scripts/consolidate_app_report.py \
                         --reports-dir   "${REPORTS_DIR}" \
