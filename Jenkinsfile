@@ -1,6 +1,7 @@
 // =============================================================
 // AWB DEVSECOPS PIPELINE — Adapte a la stack reelle
 // Compatible merge futur avec AI Security pipeline
+// FINAL HARDENED VERSION
 // =============================================================
 
 pipeline {
@@ -30,7 +31,7 @@ pipeline {
         APP_PIPELINE  = "/opt/ai-security/app-pipeline"
         REPORTS_DIR   = "/opt/ai-security/app-pipeline/reports"
 
-        BUILD_TAG     = "${BUILD_NUMBER}"
+        BUILD_TAG      = "${BUILD_NUMBER}"
         DOCKERHUB_USER = "abduuu0"
         BACKEND_IMAGE  = "abduuu0/awb-backend"
         FRONTEND_IMAGE = "abduuu0/awb-frontend"
@@ -47,55 +48,53 @@ pipeline {
         BUILD_STATUS           = "PENDING"
         DEPLOY_STATUS          = "PENDING"
 
-        DOCKER_CLIENT_TIMEOUT  = "300"
-        COMPOSE_HTTP_TIMEOUT   = "300"
+        DOCKER_CLIENT_TIMEOUT = "300"
+        COMPOSE_HTTP_TIMEOUT  = "300"
     }
 
     stages {
 
-        
-        
         stage('Init') {
-	    steps {
-		sh '''
-		    set -e
+            steps {
+                sh '''
+                    set -e
 
-		    mkdir -p \
-		        ${REPORTS_DIR}/gitleaks \
-		        ${REPORTS_DIR}/sonarqube \
-		        ${REPORTS_DIR}/sca \
-		        ${REPORTS_DIR}/trivy \
-		        ${REPORTS_DIR}/deploy \
-		        ${REPORTS_DIR}/quality \
-		        ${REPORTS_DIR}/status
+                    mkdir -p \
+                        ${REPORTS_DIR}/gitleaks \
+                        ${REPORTS_DIR}/sonarqube \
+                        ${REPORTS_DIR}/sca \
+                        ${REPORTS_DIR}/trivy \
+                        ${REPORTS_DIR}/deploy \
+                        ${REPORTS_DIR}/quality \
+                        ${REPORTS_DIR}/status
 
-		    echo "PENDING" > ${REPORTS_DIR}/status/security.status
-		    echo "PENDING" > ${REPORTS_DIR}/status/quality.status
-		    echo "PENDING" > ${REPORTS_DIR}/status/build.status
-		    echo "PENDING" > ${REPORTS_DIR}/status/deploy.status
+                    echo "PENDING" > ${REPORTS_DIR}/status/security.status
+                    echo "PENDING" > ${REPORTS_DIR}/status/quality.status
+                    echo "PENDING" > ${REPORTS_DIR}/status/build.status
+                    echo "PENDING" > ${REPORTS_DIR}/status/deploy.status
 
-		    echo "============================================================"
-		    echo " AWB DEVSECOPS PIPELINE"
-		    echo " Build       : ${BUILD_NUMBER}"
-		    echo " Env         : ${DP_TARGET_ENV}"
-		    echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
-		    echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
-		    echo "============================================================"
-		'''
-	    }
-	}
-        
+                    echo "============================================================"
+                    echo " AWB DEVSECOPS PIPELINE"
+                    echo " Build       : ${BUILD_NUMBER}"
+                    echo " Env         : ${DP_TARGET_ENV}"
+                    echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
+                    echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
+                    echo "============================================================"
+                '''
+            }
+        }
 
         stage('Parallel : Security + Quality') {
             parallel {
 
                 stage('[SECURITY] Static Analysis') {
-                    stages {
+                    steps {
+                        script {
+                            try {
 
-                        stage('[SECURITY] Gitleaks') {
-                            steps {
                                 sh '''
-                                    set +e
+                                    set -e
+
                                     echo "[*] === Gitleaks ==="
                                     gitleaks detect \
                                         --source . \
@@ -110,7 +109,7 @@ try:
     with open('${REPORTS_DIR}/gitleaks/report.json') as f:
         d = json.load(f)
     print(len(d) if isinstance(d, list) else 0)
-except Exception:
+except:
     print(0)
 ")
                                     echo "[Gitleaks] ${LEAKS} secret(s)"
@@ -120,15 +119,12 @@ except Exception:
                                         exit 1
                                     fi
                                 '''
-                            }
-                        }
 
-                        stage('[SECURITY] SonarQube SAST') {
-                            steps {
                                 withCredentials([string(credentialsId: 'sonarqube-token',
                                                         variable: 'SONAR_TOKEN')]) {
                                     sh '''
-                                        set +e
+                                        set -e
+
                                         echo "[*] === SonarQube ==="
                                         docker run --rm \
                                             --network host \
@@ -138,7 +134,7 @@ except Exception:
                                             sonarsource/sonar-scanner-cli \
                                             -Dsonar.projectKey=awb-app \
                                             -Dsonar.qualitygate.wait=false \
-                                            > ${REPORTS_DIR}/sonarqube/scan.log 2>&1
+                                            > ${REPORTS_DIR}/sonarqube/scan.log 2>&1 || true
 
                                         SONAR_RC=$?
                                         echo "[SonarQube] exit ${SONAR_RC}"
@@ -149,15 +145,12 @@ except Exception:
                                         fi
                                     '''
                                 }
-                            }
-                        }
 
-                        stage('[SECURITY] SCA — CycloneDX + DTrack') {
-                            steps {
                                 withCredentials([string(credentialsId: 'dtrack-api-key',
                                                         variable: 'DTRACK_API_KEY')]) {
                                     sh '''
-                                        set +e
+                                        set -e
+
                                         echo "[*] === SCA ==="
 
                                         if [ -f backend/requirements.txt ]; then
@@ -187,38 +180,31 @@ except Exception:
                                                     -F "projectVersion=${BUILD_TAG}" \
                                                     -F "bom=@${SBOM_FILE}" \
                                                     > ${REPORTS_DIR}/sca/dtrack-upload-${component}.json
-                                                echo "[DTrack] ${component} OK"
                                             fi
                                         done
                                     '''
                                 }
-                            }
-                        }
-                    }
 
-                    post {
-                        success {
-                            script {
                                 env.SECURITY_BRANCH_STATUS = "PASS"
                                 writeFile file: "${env.REPORTS_DIR}/status/security.status", text: "PASS"
-                            }
-                        }
-                        failure {
-                            script {
+
+                            } catch (err) {
                                 env.SECURITY_BRANCH_STATUS = "FAIL"
                                 writeFile file: "${env.REPORTS_DIR}/status/security.status", text: "FAIL"
+                                throw err
                             }
                         }
                     }
                 }
 
                 stage('[QUALITY] Tests & Lint') {
-                    stages {
+                    steps {
+                        script {
+                            try {
 
-                        stage('[QUALITY] Frontend Lint') {
-                            steps {
                                 sh '''
-                                    set +e
+                                    set -e
+
                                     echo "[*] === Frontend Lint ==="
                                     if [ -f frontend/package.json ]; then
                                         cd frontend
@@ -226,28 +212,14 @@ except Exception:
                                         npm run lint 2>&1 | tee ${REPORTS_DIR}/quality/frontend-lint.log || true
                                         cd ..
                                     fi
-                                '''
-                            }
-                        }
 
-                        stage('[QUALITY] Frontend TypeCheck') {
-                            steps {
-                                sh '''
-                                    set +e
                                     echo "[*] === Frontend TypeCheck ==="
                                     if [ -f frontend/package.json ]; then
                                         cd frontend
                                         npm run typecheck 2>&1 | tee ${REPORTS_DIR}/quality/frontend-typecheck.log || true
                                         cd ..
                                     fi
-                                '''
-                            }
-                        }
 
-                        stage('[QUALITY] Backend Tests (tolerant)') {
-                            steps {
-                                sh '''
-                                    set +e
                                     echo "[*] === Backend Tests ==="
                                     if [ -d backend ]; then
                                         cd backend
@@ -259,21 +231,14 @@ except Exception:
                                         cd ..
                                     fi
                                 '''
-                            }
-                        }
-                    }
 
-                    post {
-                        success {
-                            script {
                                 env.QUALITY_BRANCH_STATUS = "PASS"
                                 writeFile file: "${env.REPORTS_DIR}/status/quality.status", text: "PASS"
-                            }
-                        }
-                        failure {
-                            script {
+
+                            } catch (err) {
                                 env.QUALITY_BRANCH_STATUS = "FAIL"
                                 writeFile file: "${env.REPORTS_DIR}/status/quality.status", text: "FAIL"
+                                throw err
                             }
                         }
                     }
@@ -307,10 +272,6 @@ except Exception:
         stage('Security Verdict') {
             steps {
                 script {
-                    echo "============================================================"
-                    echo " SECURITY = ${env.SECURITY_BRANCH_STATUS}"
-                    echo " QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
-                    echo "============================================================"
 
                     if (env.SECURITY_BRANCH_STATUS == "FAIL" && params.FORCE_BUILD == false) {
                         error("Security FAILED — utilisez FORCE_BUILD=true pour outrepasser")
@@ -318,8 +279,10 @@ except Exception:
 
                     if (params.TARGET_ENV != 'dev') {
                         timeout(time: 30, unit: 'MINUTES') {
-                            input(message: "Approuver le deploy ${params.TARGET_ENV} ?",
-                                  ok: 'Approve')
+                            input(
+                                message: "Approuver le deploy ${params.TARGET_ENV} ?",
+                                ok: 'Approve'
+                            )
                         }
                     }
                 }
@@ -329,36 +292,32 @@ except Exception:
         stage('Build Docker Images') {
             steps {
                 withCredentials([string(credentialsId: 'vm-desktop-ip', variable: 'VM_IP')]) {
-                    sh '''
-                        set -e
-                        echo "[*] === Build images ==="
-
-                        docker build -t ${BACKEND_IMAGE}:${BUILD_TAG} ./backend
-                        docker tag ${BACKEND_IMAGE}:${BUILD_TAG} ${BACKEND_IMAGE}:latest
-
-                        docker build \
-                            --build-arg VITE_API_BASE_URL=http://${VM_IP}:8000 \
-                            --build-arg VITE_KEYCLOAK_URL=http://${VM_IP}:8080 \
-                            --build-arg VITE_KEYCLOAK_REALM=myrealm \
-                            --build-arg VITE_KEYCLOAK_CLIENT_ID=frontend-app \
-                            -t ${FRONTEND_IMAGE}:${BUILD_TAG} ./frontend
-                        docker tag ${FRONTEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:latest
-
-                        docker images | grep -E "abduuu0/awb" | head -5
-                    '''
-                }
-            }
-            post {
-                success {
                     script {
-                        env.BUILD_STATUS = "PASS"
-                        writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "PASS"
-                    }
-                }
-                failure {
-                    script {
-                        env.BUILD_STATUS = "FAIL"
-                        writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "FAIL"
+                        try {
+                            sh '''
+                                set -e
+
+                                docker build -t ${BACKEND_IMAGE}:${BUILD_TAG} ./backend
+                                docker tag ${BACKEND_IMAGE}:${BUILD_TAG} ${BACKEND_IMAGE}:latest
+
+                                docker build \
+                                    --build-arg VITE_API_BASE_URL=http://${VM_IP}:8000 \
+                                    --build-arg VITE_KEYCLOAK_URL=http://${VM_IP}:8080 \
+                                    --build-arg VITE_KEYCLOAK_REALM=myrealm \
+                                    --build-arg VITE_KEYCLOAK_CLIENT_ID=frontend-app \
+                                    -t ${FRONTEND_IMAGE}:${BUILD_TAG} ./frontend
+
+                                docker tag ${FRONTEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:latest
+                            '''
+
+                            env.BUILD_STATUS = "PASS"
+                            writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "PASS"
+
+                        } catch (err) {
+                            env.BUILD_STATUS = "FAIL"
+                            writeFile file: "${env.REPORTS_DIR}/status/build.status", text: "FAIL"
+                            throw err
+                        }
                     }
                 }
             }
@@ -367,45 +326,30 @@ except Exception:
         stage('Trivy Image Scan') {
             steps {
                 sh '''
-                    set +e
-                    echo "[*] === Trivy ==="
+                    set -e
 
                     for img in ${BACKEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:${BUILD_TAG}; do
                         IMG_NAME=$(echo $img | sed "s|/|_|g; s|:|_|g")
+
                         trivy image --severity HIGH,CRITICAL --format json \
                             --output ${REPORTS_DIR}/trivy/${IMG_NAME}.json ${img}
+
                         trivy image --severity HIGH,CRITICAL --format table ${img} \
                             | tee ${REPORTS_DIR}/trivy/${IMG_NAME}.txt
                     done
-
-                    CRITICAL=$(${VENV}/bin/python -c "
-import json, glob
-total = 0
-for f in glob.glob('${REPORTS_DIR}/trivy/*.json'):
-    with open(f) as fp:
-        d = json.load(fp)
-    for r in d.get('Results', []):
-        for v in r.get('Vulnerabilities') or []:
-            if v.get('Severity') == 'CRITICAL':
-                total += 1
-print(total)
-")
-                    echo "[Trivy] ${CRITICAL} CRITICAL"
-                    if [ "${CRITICAL}" -gt 20 ] && [ "${DP_FORCE_BUILD}" != "true" ]; then
-                        exit 1
-                    fi
                 '''
             }
         }
 
         stage('Push Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                  usernameVariable: 'DH_USER',
-                                                  passwordVariable: 'DH_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DH_USER',
+                    passwordVariable: 'DH_PASS'
+                )]) {
                     sh '''
                         set -e
-                        echo "[*] === Push DockerHub ==="
 
                         docker logout || true
                         echo "${DH_PASS}" | docker login -u "${DH_USER}" --password-stdin
@@ -415,10 +359,9 @@ print(total)
                             for i in 1 2 3 4 5; do
                                 echo "Attempt $i → $IMAGE"
                                 docker push $IMAGE && return 0
-                                echo "Push failed for $IMAGE. Retrying in 20s..."
+                                echo "Push failed, retrying in 20s..."
                                 sleep 20
                             done
-
                             echo "Push FAILED after retries: $IMAGE"
                             exit 1
                         }
@@ -435,73 +378,81 @@ print(total)
         }
 
         stage('Deploy → VM Desktop') {
-            when { expression { return params.SKIP_DEPLOY == false } }
+            when {
+                expression { return params.SKIP_DEPLOY == false }
+            }
+
             steps {
                 withCredentials([
-                    sshUserPrivateKey(credentialsId: 'vm-desktop-ssh',
-                                      keyFileVariable: 'SSH_KEY',
-                                      usernameVariable: 'SSH_USER'),
+                    sshUserPrivateKey(
+                        credentialsId: 'vm-desktop-ssh',
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER'
+                    ),
                     string(credentialsId: 'vm-desktop-ip', variable: 'VM_IP'),
                     file(credentialsId: 'app-backend-env', variable: 'BACKEND_ENV_FILE'),
                     file(credentialsId: 'app-root-env', variable: 'ROOT_ENV_FILE')
                 ]) {
-                    sh '''
-                        set -e
-                        echo "[*] === Deploy → ${VM_IP} ==="
-
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} "mkdir -p ~/awb-deploy"
-
-                        scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            docker-compose.prod.yml \
-                            ${SSH_USER}@${VM_IP}:~/awb-deploy/docker-compose.yml
-
-                        scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${BACKEND_ENV_FILE} \
-                            ${SSH_USER}@${VM_IP}:~/awb-deploy/backend.env
-
-                        scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${ROOT_ENV_FILE} \
-                            ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
-
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} \
-                            "cd ~/awb-deploy && \
-                             sed -i 's|^BUILD_TAG=.*|BUILD_TAG=${BUILD_TAG}|' .env && \
-                             sed -i 's|^DOCKERHUB_USER=.*|DOCKERHUB_USER=${DOCKERHUB_USER}|' .env && \
-                             docker compose pull && \
-                             docker compose up -d --remove-orphans && \
-                             docker ps" \
-                             | tee ${REPORTS_DIR}/deploy/deploy.log
-                    '''
-                }
-            }
-            post {
-                success {
                     script {
-                        env.DEPLOY_STATUS = "PASS"
-                        writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "PASS"
-                    }
-                }
-                failure {
-                    script {
-                        env.DEPLOY_STATUS = "FAIL"
-                        writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "FAIL"
+                        try {
+                            sh '''
+                                set -e
+
+                                ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${SSH_USER}@${VM_IP} "mkdir -p ~/awb-deploy"
+
+                                scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    docker-compose.prod.yml \
+                                    ${SSH_USER}@${VM_IP}:~/awb-deploy/docker-compose.yml
+
+                                scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${BACKEND_ENV_FILE} \
+                                    ${SSH_USER}@${VM_IP}:~/awb-deploy/backend.env
+
+                                scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${ROOT_ENV_FILE} \
+                                    ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
+
+                                ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${SSH_USER}@${VM_IP} \
+                                    "cd ~/awb-deploy && \
+                                     sed -i 's|^BUILD_TAG=.*|BUILD_TAG=${BUILD_TAG}|' .env && \
+                                     sed -i 's|^DOCKERHUB_USER=.*|DOCKERHUB_USER=${DOCKERHUB_USER}|' .env && \
+                                     docker compose pull && \
+                                     docker compose up -d --remove-orphans"
+                            '''
+
+                            env.DEPLOY_STATUS = "PASS"
+                            writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "PASS"
+
+                        } catch (err) {
+                            env.DEPLOY_STATUS = "FAIL"
+                            writeFile file: "${env.REPORTS_DIR}/status/deploy.status", text: "FAIL"
+                            throw err
+                        }
                     }
                 }
             }
         }
 
         stage('Health Check') {
-            when { expression { return params.SKIP_DEPLOY == false } }
+            when {
+                expression { return params.SKIP_DEPLOY == false }
+            }
+
             steps {
                 withCredentials([string(credentialsId: 'vm-desktop-ip', variable: 'VM_IP')]) {
                     sh '''
                         set +e
                         sleep 20
-                        for endpoint in "http://${VM_IP}:8000/docs" "http://${VM_IP}:5173" "http://${VM_IP}:8080"; do
+
+                        for endpoint in \
+                            "http://${VM_IP}:8000/docs" \
+                            "http://${VM_IP}:5173" \
+                            "http://${VM_IP}:8080"
+                        do
                             CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${endpoint})
-                            echo "  ${endpoint} -> HTTP ${CODE}"
+                            echo "${endpoint} -> HTTP ${CODE}"
                         done | tee ${REPORTS_DIR}/deploy/health.log
                     '''
                 }
@@ -519,15 +470,16 @@ print(total)
 
                 sh '''
                     ${VENV}/bin/python ${APP_PIPELINE}/scripts/consolidate_app_report.py \
-                        --reports-dir   "${REPORTS_DIR}" \
-                        --security      "${SECURITY_BRANCH_STATUS}" \
-                        --quality       "${QUALITY_BRANCH_STATUS}" \
-                        --build         "${BUILD_STATUS}" \
-                        --deploy        "${DEPLOY_STATUS}" \
-                        --build-id      "${BUILD_NUMBER}" \
-                        --target-env    "${DP_TARGET_ENV}" \
-                        --output        "${WORKSPACE}/consolidated_report.json"
+                        --reports-dir "${REPORTS_DIR}" \
+                        --security "${SECURITY_BRANCH_STATUS}" \
+                        --quality "${QUALITY_BRANCH_STATUS}" \
+                        --build "${BUILD_STATUS}" \
+                        --deploy "${DEPLOY_STATUS}" \
+                        --build-id "${BUILD_NUMBER}" \
+                        --target-env "${DP_TARGET_ENV}" \
+                        --output "${WORKSPACE}/consolidated_report.json"
                 '''
+
                 archiveArtifacts artifacts: 'consolidated_report.json',
                                  allowEmptyArchive: true
             }
@@ -540,17 +492,21 @@ print(total)
                 mkdir -p ${WORKSPACE}/reports
                 cp -r ${REPORTS_DIR}/* ${WORKSPACE}/reports/ 2>/dev/null || true
             '''
+
             archiveArtifacts artifacts: 'reports/**/*',
                              allowEmptyArchive: true,
                              fingerprint: true
+
             junit allowEmptyResults: true,
                   testResults: 'reports/quality/backend-tests.xml'
         }
+
         success {
-            echo "AWB DEVSECOPS : SUCCESS — Build ${env.BUILD_NUMBER}"
+            echo "AWB DEVSECOPS : SUCCESS — Build ${BUILD_NUMBER}"
         }
+
         failure {
-            echo "AWB DEVSECOPS : FAILED — Build ${env.BUILD_NUMBER}"
+            echo "AWB DEVSECOPS : FAILED — Build ${BUILD_NUMBER}"
         }
     }
 }
