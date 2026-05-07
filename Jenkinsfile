@@ -323,25 +323,46 @@ print(total)
                 '''
             }
         }
-
+        
+        
+        
         stage('Push Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                  usernameVariable: 'DH_USER',
-                                                  passwordVariable: 'DH_PASS')]) {
-                    sh '''
-                        set -e
-                        echo "[*] === Push DockerHub ==="
-                        echo "${DH_PASS}" | docker login -u "${DH_USER}" --password-stdin
-                        docker push ${BACKEND_IMAGE}:${BUILD_TAG}
-                        docker push ${BACKEND_IMAGE}:latest
-                        docker push ${FRONTEND_IMAGE}:${BUILD_TAG}
-                        docker push ${FRONTEND_IMAGE}:latest
-                        docker logout
-                    '''
-                }
-            }
-        }
+	    steps {
+		withCredentials([usernamePassword(
+		    credentialsId: 'dockerhub-creds',
+		    usernameVariable: 'DH_USER',
+		    passwordVariable: 'DH_PASS'
+		)]) {
+		    sh '''
+		        set -e
+		        echo "[*] === Push DockerHub ==="
+
+		        docker logout || true
+		        echo "${DH_PASS}" | docker login -u "${DH_USER}" --password-stdin
+
+		        push_with_retry () {
+		            IMAGE=$1
+		            for i in 1 2 3 4 5; do
+		                echo "Attempt $i → $IMAGE"
+		                docker push $IMAGE && return 0
+		                echo "Push failed, retrying in 20s..."
+		                sleep 20
+		            done
+		            echo "Push FAILED after retries: $IMAGE"
+		            exit 1
+		        }
+
+		        push_with_retry ${BACKEND_IMAGE}:${BUILD_TAG}
+		        push_with_retry ${BACKEND_IMAGE}:latest
+		        push_with_retry ${FRONTEND_IMAGE}:${BUILD_TAG}
+		        push_with_retry ${FRONTEND_IMAGE}:latest
+
+		        docker logout
+		    '''
+		}
+	    }
+	}
+        
 
         stage('Deploy → VM Desktop') {
             when { expression { return params.SKIP_DEPLOY == false } }
