@@ -31,9 +31,9 @@ pipeline {
         REPORTS_DIR   = "/opt/ai-security/app-pipeline/reports"
 
         BUILD_TAG     = "${BUILD_NUMBER}"
-        DOCKERHUB_USER = "abduuu7"
-        BACKEND_IMAGE  = "abduuu7/awb-backend"
-        FRONTEND_IMAGE = "abduuu7/awb-frontend"
+        DOCKERHUB_USER = "abduuu0"
+        BACKEND_IMAGE  = "abduuu0/awb-backend"
+        FRONTEND_IMAGE = "abduuu0/awb-frontend"
 
         SONAR_HOST_URL = "http://localhost:9000"
         DTRACK_URL     = "http://localhost:8081"
@@ -280,7 +280,7 @@ except Exception:
                             -t ${FRONTEND_IMAGE}:${BUILD_TAG} ./frontend
                         docker tag ${FRONTEND_IMAGE}:${BUILD_TAG} ${FRONTEND_IMAGE}:latest
 
-                        docker images | grep -E "abduuu7/awb" | head -5
+                        docker images | grep -E "abduuu0/awb" | head -5
                     '''
                 }
             }
