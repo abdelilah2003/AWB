@@ -1,6 +1,11 @@
 // =============================================================
 // AWB DEVSECOPS PIPELINE — Adapte a la stack reelle
 // Compatible merge futur avec AI Security pipeline
+//
+// STRATEGIE DE DEPLOIEMENT : Rolling update partiel
+// - Seuls awb-backend et awb-frontend sont recrees (nouvelles images)
+// - postgres_db, keycloak, node-exporter et autres services restent UP
+// - Pas de downtime sur la DB ni Keycloak
 // =============================================================
 
 // Variables globales Groovy (en dehors de environment {})
@@ -42,6 +47,10 @@ pipeline {
         BACKEND_IMAGE  = "abduuu0/awb-backend"
         FRONTEND_IMAGE = "abduuu0/awb-frontend"
 
+        // Noms des services dans docker-compose.prod.yml
+        // (a adapter si differents)
+        APP_SERVICES   = "awb-backend awb-frontend"
+
         SONAR_HOST_URL = "http://localhost:9000"
         DTRACK_URL     = "http://localhost:8081"
 
@@ -67,6 +76,7 @@ pipeline {
                     echo " Env         : ${DP_TARGET_ENV}"
                     echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
                     echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
+                    echo " Services    : ${APP_SERVICES} (rolling update)"
                     echo " Trivy gate  : ${TRIVY_CRITICAL_THRESHOLD} CRITICAL max"
                     echo "============================================================"
                 '''
@@ -371,7 +381,7 @@ print(total)
             }
         }
 
-        stage('Deploy → VM Desktop') {
+        stage('Deploy → VM Desktop (Rolling Update)') {
             when { expression { return params.SKIP_DEPLOY == false } }
             steps {
                 withCredentials([
@@ -384,24 +394,28 @@ print(total)
                 ]) {
                     sh '''
                         set -e
-                        echo "[*] === Deploy -> ${VM_IP} ==="
+                        echo "[*] === Deploy -> ${VM_IP} (rolling update) ==="
 
-                        # Test connectivite SSH avant de continuer
+                        # Test connectivite SSH
                         echo "[*] Test SSH connection..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             -o ConnectTimeout=10 \
                             ${SSH_USER}@${VM_IP} "echo SSH OK && hostname && whoami"
 
+                        # Etat AVANT deploy : voir ce qui tourne
+                        echo "[*] Containers AVANT deploy :"
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}' | grep -E 'awb|postgres|keycloak|node-exporter' || echo '  (aucun container app)'"
+
                         # Preparer le repertoire et nettoyer les anciens fichiers
-                        # de config (ils sont crees en read-only par Jenkins credentials,
-                        # donc scp ne peut pas les ecraser sans cleanup prealable)
+                        # de config (read-only par Jenkins credentials → cleanup obligatoire)
                         echo "[*] Prepare deploy directory..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${SSH_USER}@${VM_IP} \
                             "mkdir -p ~/awb-deploy && \
                              chmod -R u+w ~/awb-deploy/ 2>/dev/null || true && \
-                             rm -f ~/awb-deploy/backend.env ~/awb-deploy/.env ~/awb-deploy/docker-compose.yml || true && \
-                             echo '  Repertoire pret :' && ls -la ~/awb-deploy/"
+                             rm -f ~/awb-deploy/backend.env ~/awb-deploy/.env ~/awb-deploy/docker-compose.yml || true"
 
                         echo "[*] Copy compose file..."
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
@@ -417,51 +431,51 @@ print(total)
                             ${ROOT_ENV_FILE} \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
 
-                        # Securiser les permissions des fichiers .env (lecture/ecriture
-                        # pour le owner uniquement). 600 permet aussi a scp de les
-                        # ecraser au prochain build sans conflit de permissions.
+                        # Permissions strictes sur les .env (rw owner only)
                         echo "[*] Securisation des permissions des .env..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${SSH_USER}@${VM_IP} \
-                            "chmod 600 ~/awb-deploy/backend.env ~/awb-deploy/.env && \
-                             ls -la ~/awb-deploy/"
+                            "chmod 600 ~/awb-deploy/backend.env ~/awb-deploy/.env"
 
-                        # Snapshot des volumes AVANT cleanup (pour traçabilite)
-                        echo "[*] Volumes avant deploy :"
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} \
-                            "docker volume ls | grep -E 'awb-deploy|pg_data' || echo '  (aucun volume awb)'"
-
-                        # Cleanup des containers en conflit (standalone, hors compose)
-                        # IMPORTANT: docker rm -f supprime UNIQUEMENT le container,
-                        # PAS les volumes nommes (ils restent intacts).
-                        # On NE met PAS le flag -v qui supprimerait les volumes anonymes.
-                        echo "[*] Cleanup conflicting containers (volumes preserves)..."
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} \
-                            "for c in node-exporter cadvisor postgres_db keycloak prometheus grafana awb-backend awb-frontend; do
-                                if docker ps -a --format '{{.Names}}' | grep -qx \\"\\$c\\"; then
-                                    echo \\"  removing container: \\$c\\"
-                                    docker rm -f \\"\\$c\\" || true
-                                fi
-                            done"
-
-                        # Verifier que les volumes sont toujours la APRES cleanup
-                        echo "[*] Volumes apres cleanup (doivent etre identiques) :"
-                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} \
-                            "docker volume ls | grep -E 'awb-deploy|pg_data' || echo '  (aucun volume awb)'"
-
-                        echo "[*] Pull & up..."
+                        # Update du build tag dans le .env pour que compose
+                        # pulle la bonne version d'image
+                        echo "[*] Update BUILD_TAG=${BUILD_TAG} dans .env..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${SSH_USER}@${VM_IP} \
                             "cd ~/awb-deploy && \
                              sed -i 's|^BUILD_TAG=.*|BUILD_TAG=${BUILD_TAG}|' .env && \
                              sed -i 's|^DOCKERHUB_USER=.*|DOCKERHUB_USER=${DOCKERHUB_USER}|' .env && \
-                             docker compose pull && \
-                             docker compose up -d --remove-orphans && \
-                             docker ps" \
+                             grep -E '^(BUILD_TAG|DOCKERHUB_USER)=' .env"
+
+                        # ROLLING UPDATE PARTIEL : SEULEMENT backend + frontend
+                        # ----------------------------------------------------
+                        # 1. Pull SEULEMENT les images de awb-backend et awb-frontend
+                        # 2. up --no-deps : ne touche pas aux services dependants
+                        #    (postgres_db, keycloak, node-exporter restent UP)
+                        # 3. up sur services nommes : compose recree UNIQUEMENT
+                        #    awb-backend et awb-frontend avec les nouvelles images
+                        echo "[*] Pull images (backend + frontend uniquement)..."
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "cd ~/awb-deploy && \
+                             docker compose pull ${APP_SERVICES}"
+
+                        echo "[*] Recreate backend + frontend (autres services intouches)..."
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "cd ~/awb-deploy && \
+                             docker compose up -d --no-deps --force-recreate ${APP_SERVICES}" \
                              | tee ${REPORTS_DIR}/deploy/deploy.log
+
+                        # Etat APRES deploy : verifier que les services intouches
+                        # sont toujours UP avec leur uptime initial
+                        echo "[*] Containers APRES deploy :"
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}' | grep -E 'awb|postgres|keycloak|node-exporter'"
+
+                        echo "[*] Verification : seuls awb-backend et awb-frontend doivent avoir un uptime recent"
+                        echo "    Les autres (postgres_db, keycloak, node-exporter) doivent garder leur uptime d'avant"
                     '''
                 }
             }
@@ -477,7 +491,10 @@ print(total)
                 withCredentials([string(credentialsId: 'vm-desktop-ip', variable: 'VM_IP')]) {
                     sh '''
                         set +e
-                        sleep 20
+                        # Petit delai pour laisser le backend demarrer
+                        echo "[*] Wait 15s pour demarrage des services recreees..."
+                        sleep 15
+
                         for endpoint in "http://${VM_IP}:8000/docs" "http://${VM_IP}:5173" "http://${VM_IP}:8080"; do
                             CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${endpoint})
                             echo "  ${endpoint} -> HTTP ${CODE}"
