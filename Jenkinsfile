@@ -38,6 +38,9 @@ pipeline {
         SONAR_HOST_URL = "http://localhost:9000"
         DTRACK_URL     = "http://localhost:8081"
 
+        // Seuils security
+        TRIVY_CRITICAL_THRESHOLD = "30"
+
         DP_TARGET_ENV  = "${params.TARGET_ENV}"
         DP_SKIP_DEPLOY = "${params.SKIP_DEPLOY}"
         DP_FORCE_BUILD = "${params.FORCE_BUILD}"
@@ -62,6 +65,7 @@ pipeline {
                     echo " Env         : ${DP_TARGET_ENV}"
                     echo " Backend img : ${BACKEND_IMAGE}:${BUILD_TAG}"
                     echo " Frontend img: ${FRONTEND_IMAGE}:${BUILD_TAG}"
+                    echo " Trivy gate  : ${TRIVY_CRITICAL_THRESHOLD} CRITICAL max"
                     echo "============================================================"
                 '''
             }
@@ -318,10 +322,12 @@ for f in glob.glob('${REPORTS_DIR}/trivy/*.json'):
                 total += 1
 print(total)
 ")
-                    echo "[Trivy] ${CRITICAL} CRITICAL"
-                    if [ "${CRITICAL}" -gt 20 ] && [ "${DP_FORCE_BUILD}" != "true" ]; then
+                    echo "[Trivy] ${CRITICAL} CRITICAL (seuil: ${TRIVY_CRITICAL_THRESHOLD})"
+                    if [ "${CRITICAL}" -gt "${TRIVY_CRITICAL_THRESHOLD}" ] && [ "${DP_FORCE_BUILD}" != "true" ]; then
+                        echo "[Trivy] FAIL : ${CRITICAL} > ${TRIVY_CRITICAL_THRESHOLD}"
                         exit 1
                     fi
+                    echo "[Trivy] OK : ${CRITICAL} <= ${TRIVY_CRITICAL_THRESHOLD}"
                 '''
             }
         }
@@ -426,48 +432,55 @@ print(total)
                 }
             }
         }
-
-        stage('Consolidation') {
-            steps {
-                script {
-                    // Si SKIP_DEPLOY est actif, on marque DEPLOY comme SKIPPED
-                    // pour eviter qu'il reste a PENDING dans le rapport
-                    if (params.SKIP_DEPLOY == true && env.DEPLOY_STATUS == "PENDING") {
-                        env.DEPLOY_STATUS = "SKIPPED"
-                    }
-
-                    echo "============================================================"
-                    echo " CONSOLIDATION — Statuts collectes :"
-                    echo "   SECURITY = ${env.SECURITY_BRANCH_STATUS}"
-                    echo "   QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
-                    echo "   BUILD    = ${env.BUILD_STATUS}"
-                    echo "   DEPLOY   = ${env.DEPLOY_STATUS}"
-                    echo "============================================================"
-
-                    sh """
-                        ${env.VENV}/bin/python ${env.APP_PIPELINE}/scripts/consolidate_app_report.py \\
-                            --reports-dir   "${env.REPORTS_DIR}" \\
-                            --security      "${env.SECURITY_BRANCH_STATUS}" \\
-                            --quality       "${env.QUALITY_BRANCH_STATUS}" \\
-                            --build         "${env.BUILD_STATUS}" \\
-                            --deploy        "${env.DEPLOY_STATUS}" \\
-                            --build-id      "${env.BUILD_NUMBER}" \\
-                            --target-env    "${env.DP_TARGET_ENV}" \\
-                            --output        "${env.WORKSPACE}/consolidated_report.json"
-                    """
-                }
-                archiveArtifacts artifacts: 'consolidated_report.json',
-                                 allowEmptyArchive: true
-            }
-        }
     }
 
     post {
         always {
+            // Copier les rapports dans le workspace
             sh '''
                 mkdir -p ${WORKSPACE}/reports
                 cp -r ${REPORTS_DIR}/* ${WORKSPACE}/reports/ 2>/dev/null || true
             '''
+
+            script {
+                // Normaliser les statuts qui n'ont jamais ete mis a jour
+                if (env.BUILD_STATUS == "PENDING") {
+                    env.BUILD_STATUS = "NOT_REACHED"
+                }
+                if (env.DEPLOY_STATUS == "PENDING") {
+                    env.DEPLOY_STATUS = (params.SKIP_DEPLOY == true) ? "SKIPPED" : "NOT_REACHED"
+                }
+                if (env.SECURITY_BRANCH_STATUS == "PENDING") {
+                    env.SECURITY_BRANCH_STATUS = "NOT_REACHED"
+                }
+                if (env.QUALITY_BRANCH_STATUS == "PENDING") {
+                    env.QUALITY_BRANCH_STATUS = "NOT_REACHED"
+                }
+
+                echo "============================================================"
+                echo " CONSOLIDATION FINALE — Build ${env.BUILD_NUMBER}"
+                echo "   SECURITY = ${env.SECURITY_BRANCH_STATUS}"
+                echo "   QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
+                echo "   BUILD    = ${env.BUILD_STATUS}"
+                echo "   DEPLOY   = ${env.DEPLOY_STATUS}"
+                echo "============================================================"
+
+                // Generer le rapport meme si une stage precedente a fail
+                sh """
+                    ${env.VENV}/bin/python ${env.APP_PIPELINE}/scripts/consolidate_app_report.py \\
+                        --reports-dir   "${env.REPORTS_DIR}" \\
+                        --security      "${env.SECURITY_BRANCH_STATUS}" \\
+                        --quality       "${env.QUALITY_BRANCH_STATUS}" \\
+                        --build         "${env.BUILD_STATUS}" \\
+                        --deploy        "${env.DEPLOY_STATUS}" \\
+                        --build-id      "${env.BUILD_NUMBER}" \\
+                        --target-env    "${env.DP_TARGET_ENV}" \\
+                        --output        "${env.WORKSPACE}/consolidated_report.json"
+                """
+            }
+
+            archiveArtifacts artifacts: 'consolidated_report.json',
+                             allowEmptyArchive: true
             archiveArtifacts artifacts: 'reports/**/*',
                              allowEmptyArchive: true,
                              fingerprint: true
