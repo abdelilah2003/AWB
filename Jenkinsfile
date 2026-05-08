@@ -3,6 +3,13 @@
 // Compatible merge futur avec AI Security pipeline
 // =============================================================
 
+// Variables globales Groovy (en dehors de environment {})
+// Elles persistent de maniere fiable entre stages, contrairement a env.X
+def securityStatus = "PENDING"
+def qualityStatus  = "PENDING"
+def buildStatus    = "PENDING"
+def deployStatus   = "PENDING"
+
 pipeline {
     agent any
 
@@ -44,11 +51,6 @@ pipeline {
         DP_TARGET_ENV  = "${params.TARGET_ENV}"
         DP_SKIP_DEPLOY = "${params.SKIP_DEPLOY}"
         DP_FORCE_BUILD = "${params.FORCE_BUILD}"
-
-        SECURITY_BRANCH_STATUS = "PENDING"
-        QUALITY_BRANCH_STATUS  = "PENDING"
-        BUILD_STATUS           = "PENDING"
-        DEPLOY_STATUS          = "PENDING"
     }
 
     stages {
@@ -181,9 +183,9 @@ except Exception:
                         }
                     }
                     post {
-                        success { script { env.SECURITY_BRANCH_STATUS = "PASS" } }
-                        failure { script { env.SECURITY_BRANCH_STATUS = "FAIL" } }
-                        unstable { script { env.SECURITY_BRANCH_STATUS = "UNSTABLE" } }
+                        success { script { securityStatus = "PASS" } }
+                        failure { script { securityStatus = "FAIL" } }
+                        unstable { script { securityStatus = "UNSTABLE" } }
                     }
                 }
 
@@ -238,9 +240,9 @@ except Exception:
                         }
                     }
                     post {
-                        success { script { env.QUALITY_BRANCH_STATUS = "PASS" } }
-                        failure { script { env.QUALITY_BRANCH_STATUS = "FAIL" } }
-                        unstable { script { env.QUALITY_BRANCH_STATUS = "UNSTABLE" } }
+                        success { script { qualityStatus = "PASS" } }
+                        failure { script { qualityStatus = "FAIL" } }
+                        unstable { script { qualityStatus = "UNSTABLE" } }
                     }
                 }
             }
@@ -250,11 +252,11 @@ except Exception:
             steps {
                 script {
                     echo "============================================================"
-                    echo " SECURITY = ${env.SECURITY_BRANCH_STATUS}"
-                    echo " QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
+                    echo " SECURITY = ${securityStatus}"
+                    echo " QUALITY  = ${qualityStatus}"
                     echo "============================================================"
 
-                    if (env.SECURITY_BRANCH_STATUS == "FAIL" && params.FORCE_BUILD == false) {
+                    if (securityStatus == "FAIL" && params.FORCE_BUILD == false) {
                         error("Security FAILED — utilisez FORCE_BUILD=true pour outrepasser")
                     }
 
@@ -291,8 +293,8 @@ except Exception:
                 }
             }
             post {
-                success { script { env.BUILD_STATUS = "PASS" } }
-                failure { script { env.BUILD_STATUS = "FAIL" } }
+                success { script { buildStatus = "PASS" } }
+                failure { script { buildStatus = "FAIL" } }
             }
         }
 
@@ -384,13 +386,21 @@ print(total)
                         set -e
                         echo "[*] === Deploy -> ${VM_IP} ==="
 
+                        # Test connectivite SSH avant de continuer
+                        echo "[*] Test SSH connection..."
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            -o ConnectTimeout=10 \
+                            ${SSH_USER}@${VM_IP} "echo SSH OK && hostname && whoami"
+
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${SSH_USER}@${VM_IP} "mkdir -p ~/awb-deploy"
 
+                        echo "[*] Copy compose file..."
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             docker-compose.prod.yml \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/docker-compose.yml
 
+                        echo "[*] Copy env files..."
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${BACKEND_ENV_FILE} \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/backend.env
@@ -399,6 +409,7 @@ print(total)
                             ${ROOT_ENV_FILE} \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
 
+                        echo "[*] Pull & up..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${SSH_USER}@${VM_IP} \
                             "cd ~/awb-deploy && \
@@ -412,8 +423,8 @@ print(total)
                 }
             }
             post {
-                success { script { env.DEPLOY_STATUS = "PASS" } }
-                failure { script { env.DEPLOY_STATUS = "FAIL" } }
+                success { script { deployStatus = "PASS" } }
+                failure { script { deployStatus = "FAIL" } }
             }
         }
 
@@ -444,38 +455,40 @@ print(total)
 
             script {
                 // Normaliser les statuts qui n'ont jamais ete mis a jour
-                if (env.BUILD_STATUS == "PENDING") {
-                    env.BUILD_STATUS = "NOT_REACHED"
+                if (buildStatus == "PENDING") {
+                    buildStatus = "NOT_REACHED"
                 }
-                if (env.DEPLOY_STATUS == "PENDING") {
-                    env.DEPLOY_STATUS = (params.SKIP_DEPLOY == true) ? "SKIPPED" : "NOT_REACHED"
+                if (deployStatus == "PENDING") {
+                    deployStatus = (params.SKIP_DEPLOY == true) ? "SKIPPED" : "NOT_REACHED"
                 }
-                if (env.SECURITY_BRANCH_STATUS == "PENDING") {
-                    env.SECURITY_BRANCH_STATUS = "NOT_REACHED"
+                if (securityStatus == "PENDING") {
+                    securityStatus = "NOT_REACHED"
                 }
-                if (env.QUALITY_BRANCH_STATUS == "PENDING") {
-                    env.QUALITY_BRANCH_STATUS = "NOT_REACHED"
+                if (qualityStatus == "PENDING") {
+                    qualityStatus = "NOT_REACHED"
                 }
 
                 echo "============================================================"
                 echo " CONSOLIDATION FINALE — Build ${env.BUILD_NUMBER}"
-                echo "   SECURITY = ${env.SECURITY_BRANCH_STATUS}"
-                echo "   QUALITY  = ${env.QUALITY_BRANCH_STATUS}"
-                echo "   BUILD    = ${env.BUILD_STATUS}"
-                echo "   DEPLOY   = ${env.DEPLOY_STATUS}"
+                echo "   SECURITY = ${securityStatus}"
+                echo "   QUALITY  = ${qualityStatus}"
+                echo "   BUILD    = ${buildStatus}"
+                echo "   DEPLOY   = ${deployStatus}"
                 echo "============================================================"
 
                 // Generer le rapport meme si une stage precedente a fail
+                // On utilise || true pour eviter que le script Python fasse fail
+                // le build (verdict PARTIAL = exit 1 dans le script Python)
                 sh """
                     ${env.VENV}/bin/python ${env.APP_PIPELINE}/scripts/consolidate_app_report.py \\
                         --reports-dir   "${env.REPORTS_DIR}" \\
-                        --security      "${env.SECURITY_BRANCH_STATUS}" \\
-                        --quality       "${env.QUALITY_BRANCH_STATUS}" \\
-                        --build         "${env.BUILD_STATUS}" \\
-                        --deploy        "${env.DEPLOY_STATUS}" \\
+                        --security      "${securityStatus}" \\
+                        --quality       "${qualityStatus}" \\
+                        --build         "${buildStatus}" \\
+                        --deploy        "${deployStatus}" \\
                         --build-id      "${env.BUILD_NUMBER}" \\
                         --target-env    "${env.DP_TARGET_ENV}" \\
-                        --output        "${env.WORKSPACE}/consolidated_report.json"
+                        --output        "${env.WORKSPACE}/consolidated_report.json" || true
                 """
             }
 
