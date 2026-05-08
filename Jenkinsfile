@@ -392,8 +392,16 @@ print(total)
                             -o ConnectTimeout=10 \
                             ${SSH_USER}@${VM_IP} "echo SSH OK && hostname && whoami"
 
+                        # Preparer le repertoire et nettoyer les anciens fichiers
+                        # de config (ils sont crees en read-only par Jenkins credentials,
+                        # donc scp ne peut pas les ecraser sans cleanup prealable)
+                        echo "[*] Prepare deploy directory..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
-                            ${SSH_USER}@${VM_IP} "mkdir -p ~/awb-deploy"
+                            ${SSH_USER}@${VM_IP} \
+                            "mkdir -p ~/awb-deploy && \
+                             chmod -R u+w ~/awb-deploy/ 2>/dev/null || true && \
+                             rm -f ~/awb-deploy/backend.env ~/awb-deploy/.env ~/awb-deploy/docker-compose.yml || true && \
+                             echo '  Repertoire pret :' && ls -la ~/awb-deploy/"
 
                         echo "[*] Copy compose file..."
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
@@ -408,6 +416,15 @@ print(total)
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${ROOT_ENV_FILE} \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
+
+                        # Securiser les permissions des fichiers .env (lecture/ecriture
+                        # pour le owner uniquement). 600 permet aussi a scp de les
+                        # ecraser au prochain build sans conflit de permissions.
+                        echo "[*] Securisation des permissions des .env..."
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "chmod 600 ~/awb-deploy/backend.env ~/awb-deploy/.env && \
+                             ls -la ~/awb-deploy/"
 
                         # Snapshot des volumes AVANT cleanup (pour traçabilite)
                         echo "[*] Volumes avant deploy :"
