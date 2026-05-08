@@ -46,7 +46,7 @@ pipeline {
         DTRACK_URL     = "http://localhost:8081"
 
         // Seuils security
-        TRIVY_CRITICAL_THRESHOLD = "100"
+        TRIVY_CRITICAL_THRESHOLD = "30"
 
         DP_TARGET_ENV  = "${params.TARGET_ENV}"
         DP_SKIP_DEPLOY = "${params.SKIP_DEPLOY}"
@@ -408,6 +408,32 @@ print(total)
                         scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
                             ${ROOT_ENV_FILE} \
                             ${SSH_USER}@${VM_IP}:~/awb-deploy/.env
+
+                        # Snapshot des volumes AVANT cleanup (pour traçabilite)
+                        echo "[*] Volumes avant deploy :"
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "docker volume ls | grep -E 'awb-deploy|pg_data' || echo '  (aucun volume awb)'"
+
+                        # Cleanup des containers en conflit (standalone, hors compose)
+                        # IMPORTANT: docker rm -f supprime UNIQUEMENT le container,
+                        # PAS les volumes nommes (ils restent intacts).
+                        # On NE met PAS le flag -v qui supprimerait les volumes anonymes.
+                        echo "[*] Cleanup conflicting containers (volumes preserves)..."
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "for c in node-exporter cadvisor postgres_db keycloak prometheus grafana awb-backend awb-frontend; do
+                                if docker ps -a --format '{{.Names}}' | grep -qx \\"\\$c\\"; then
+                                    echo \\"  removing container: \\$c\\"
+                                    docker rm -f \\"\\$c\\" || true
+                                fi
+                            done"
+
+                        # Verifier que les volumes sont toujours la APRES cleanup
+                        echo "[*] Volumes apres cleanup (doivent etre identiques) :"
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                            ${SSH_USER}@${VM_IP} \
+                            "docker volume ls | grep -E 'awb-deploy|pg_data' || echo '  (aucun volume awb)'"
 
                         echo "[*] Pull & up..."
                         ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
