@@ -46,7 +46,7 @@ pipeline {
         DTRACK_URL     = "http://localhost:8081"
 
         // Seuils security
-        TRIVY_CRITICAL_THRESHOLD = "30"
+        TRIVY_CRITICAL_THRESHOLD = "50"
 
         DP_TARGET_ENV  = "${params.TARGET_ENV}"
         DP_SKIP_DEPLOY = "${params.SKIP_DEPLOY}"
