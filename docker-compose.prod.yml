@@ -1,79 +1,46 @@
+# =============================================================
+# DOCKER-COMPOSE.PROD.YML
+# Application : backend + frontend uniquement.
+# Gere par le pipeline Jenkins (rolling update a chaque build).
+#
+# Pre-requis : docker-compose.infra.yml doit etre UP au prealable
+# (postgres_db, keycloak, node-exporter, reseau app-network).
+# =============================================================
+
 services:
-  postgres_db:
-    image: postgres:16-alpine
-    container_name: postgres_db
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:latest
-    container_name: keycloak
-    command: start-dev
-    environment:
-      KEYCLOAK_ADMIN: ${KC_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
-    ports:
-      - "8080:8080"
-    networks:
-      - app-network
-    restart: unless-stopped
-
   backend:
     image: ${DOCKERHUB_USER}/awb-backend:${BUILD_TAG:-latest}
     container_name: awb-backend
     env_file:
       - .env
+      - backend.env
     environment:
+      # postgres_db et keycloak sont resolus via le DNS du reseau docker
       DB_HOST: postgres_db
     ports:
       - "8000:8000"
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
     networks:
       - app-network
     restart: unless-stopped
+    # PAS de depends_on : les services infra sont dans un autre compose
+    # Le restart: unless-stopped + healthcheck cote infra suffisent
 
   frontend:
     image: ${DOCKERHUB_USER}/awb-frontend:${BUILD_TAG:-latest}
     container_name: awb-frontend
     ports:
       - "5173:80"
-    depends_on:
-      - backend
     networks:
       - app-network
     restart: unless-stopped
-
-  # Pour Prometheus monitoring
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    ports:
-      - "9100:9100"
-    networks:
-      - app-network
-    restart: unless-stopped
+    # PAS de depends_on sur backend non plus :
+    # le backend etant recree avant frontend, l ordre est garanti
+    # par les noms passes au pipeline (backend frontend).
 
 networks:
+  # Reseau EXTERNE cree par docker-compose.infra.yml
+  # backend et frontend rejoignent ce reseau pour parler a
+  # postgres_db et keycloak via leurs noms DNS docker
   app-network:
-    driver: bridge
-
-volumes:
-  pg_data:
+    name: app-network
+    external: true
