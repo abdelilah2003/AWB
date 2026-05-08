@@ -49,7 +49,7 @@ pipeline {
 
         // Noms des services dans docker-compose.prod.yml
         // (a adapter si differents)
-        APP_SERVICES   = "awb-backend awb-frontend"
+        APP_SERVICES   = "backend frontend"
 
         SONAR_HOST_URL = "http://localhost:9000"
         DTRACK_URL     = "http://localhost:8081"
